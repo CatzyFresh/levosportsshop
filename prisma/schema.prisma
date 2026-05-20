@@ -1,0 +1,114 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum InvoiceStatus {
+  PAID
+  UNPAID
+  PARTIAL
+  OVERDUE
+}
+
+model Player {
+  id        Int        @id @default(autoincrement())
+  name      String
+  email     String?
+  phone     String?
+  notes     String?
+
+  purchases Purchase[]
+  invoices  Invoice[]
+
+  createdAt DateTime   @default(now()) @map("created_at")
+  updatedAt DateTime   @updatedAt @map("updated_at")
+
+  @@map("players")
+}
+
+model StoreItem {
+  id            Int        @id @default(autoincrement())
+  name          String
+  defaultPrice  Int        @map("default_price")
+  stockTracked  Boolean    @default(false) @map("stock_tracked")
+  currentStock  Int?       @map("current_stock")
+  isActive      Boolean    @default(true) @map("is_active")
+
+  purchases     Purchase[]
+
+  createdAt     DateTime   @default(now()) @map("created_at")
+  updatedAt     DateTime   @updatedAt @map("updated_at")
+
+  @@map("store_items")
+}
+
+model Purchase {
+  id            Int        @id @default(autoincrement())
+
+  playerId      Int        @map("player_id")
+  player        Player     @relation(fields: [playerId], references: [id], onDelete: Cascade)
+
+  storeItemId   Int?       @map("store_item_id")
+  storeItem     StoreItem? @relation(fields: [storeItemId], references: [id], onDelete: SetNull)
+
+  invoiceId     Int?       @map("invoice_id")
+  invoice       Invoice?   @relation(fields: [invoiceId], references: [id], onDelete: SetNull)
+
+  itemName      String     @map("item_name")
+  unitPrice     Int        @map("unit_price")
+  quantity      Int        @default(1)
+  totalAmount   Int        @map("total_amount")
+  purchaseDate  DateTime   @map("purchase_date")
+  notes         String?
+
+  createdAt     DateTime   @default(now()) @map("created_at")
+  updatedAt     DateTime   @updatedAt @map("updated_at")
+
+  @@map("purchases")
+}
+
+model Invoice {
+  id          Int           @id @default(autoincrement())
+
+  playerId    Int           @map("player_id")
+  player      Player        @relation(fields: [playerId], references: [id], onDelete: Cascade)
+
+  month       Int
+  year        Int
+  dueDate     DateTime?     @map("due_date")
+
+  totalAmount Int           @default(0) @map("total_amount")
+  paidAmount  Int           @default(0) @map("paid_amount")
+  balance     Int           @default(0)
+
+  status      InvoiceStatus @default(UNPAID)
+
+  purchases   Purchase[]
+  payments    Payment[]
+
+  createdAt   DateTime      @default(now()) @map("created_at")
+  updatedAt   DateTime      @updatedAt @map("updated_at")
+
+  @@unique([playerId, month, year])
+  @@map("invoices")
+}
+
+model Payment {
+  id          Int       @id @default(autoincrement())
+
+  invoiceId   Int       @map("invoice_id")
+  invoice     Invoice   @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+
+  amount      Int
+  paidAt      DateTime  @default(now()) @map("paid_at")
+  method      String?
+  notes       String?
+
+  createdAt   DateTime  @default(now()) @map("created_at")
+
+  @@map("payments")
+}
