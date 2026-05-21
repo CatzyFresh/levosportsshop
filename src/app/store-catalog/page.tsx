@@ -1,29 +1,14 @@
 import AddCatalogItemDialog from "@/components/catalog/AddCatalogItemDialog";
+import prisma from "@/lib/prisma";
+import { formatINR } from "@/lib/money";
 
-const catalogItems = [
-  {
-    name: "Strings (MSV)",
-    price: "₹850.00",
-    stock: "∞ Unlimited",
-  },
-  {
-    name: "Ball can (Head tour)",
-    price: "₹430.00",
-    stock: "∞ Unlimited",
-  },
-  {
-    name: "Grips",
-    price: "₹100.00",
-    stock: "∞ Unlimited",
-  },
-  {
-    name: "Stringing Service",
-    price: "₹250.00",
-    stock: "∞ Unlimited",
-  },
-];
+export default async function StoreCatalogPage() {
+  const catalogItems = await prisma.storeItem.findMany({
+    orderBy: {
+      name: "asc",
+    },
+  });
 
-export default function StoreCatalogPage() {
   return (
     <>
       <div className="mb-8 flex items-start justify-between">
@@ -49,23 +34,42 @@ export default function StoreCatalogPage() {
           </thead>
 
           <tbody>
+            {catalogItems.length === 0 && (
+              <tr>
+                <td
+                  colSpan={4}
+                  className="px-5 py-12 text-center text-slate-500"
+                >
+                  No catalog items found. Add your first item.
+                </td>
+              </tr>
+            )}
+
             {catalogItems.map((item) => (
               <tr
-                key={item.name}
+                key={item.id}
                 className="border-b border-slate-100 hover:bg-slate-50 last:border-b-0"
               >
                 <td className="px-5 py-4 font-medium">{item.name}</td>
-                <td className="px-5 py-4 font-semibold">{item.price}</td>
+
+                <td className="px-5 py-4 font-semibold">
+                  {formatINR(item.defaultPrice)}
+                </td>
+
                 <td className="px-5 py-4">
                   <span className="rounded-md border border-slate-300 px-3 py-1 text-sm text-slate-500">
-                    {item.stock}
+                    {item.stockTracked
+                      ? item.currentStock ?? 0
+                      : "∞ Unlimited"}
                   </span>
                 </td>
+
                 <td className="px-5 py-4">
                   <div className="flex justify-end gap-4">
                     <button className="text-slate-500 hover:text-cyan-600">
                       Edit
                     </button>
+
                     <button className="text-red-500 hover:text-red-700">
                       Delete
                     </button>

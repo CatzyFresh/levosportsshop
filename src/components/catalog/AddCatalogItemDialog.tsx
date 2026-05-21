@@ -1,15 +1,36 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useTransition } from "react";
 import ModalShell from "@/components/common/ModalShell";
+import { createCatalogItemAction } from "@/actions/catalog-actions";
 
 export default function AddCatalogItemDialog() {
   const [isOpen, setIsOpen] = useState(false);
   const [trackStock, setTrackStock] = useState(false);
+  const [error, setError] = useState("");
+  const [isPending, startTransition] = useTransition();
 
   function closeDialog() {
     setIsOpen(false);
     setTrackStock(false);
+    setError("");
+  }
+
+  function handleSubmit(formData: FormData) {
+    setError("");
+
+    startTransition(async () => {
+      try {
+        await createCatalogItemAction(formData);
+        closeDialog();
+      } catch (error) {
+        setError(
+          error instanceof Error
+            ? error.message
+            : "Something went wrong while saving the item."
+        );
+      }
+    });
   }
 
   return (
@@ -37,22 +58,34 @@ export default function AddCatalogItemDialog() {
               </button>
 
               <button
-                type="button"
-                onClick={closeDialog}
-                className="rounded-md bg-cyan-500 px-5 py-3 font-semibold text-white hover:bg-cyan-600"
+                type="submit"
+                form="add-catalog-item-form"
+                disabled={isPending}
+                className="rounded-md bg-cyan-500 px-5 py-3 font-semibold text-white hover:bg-cyan-600 disabled:cursor-not-allowed disabled:opacity-60"
               >
-                Save Item
+                {isPending ? "Saving..." : "Save Item"}
               </button>
             </>
           }
         >
-          <form className="space-y-5">
+          <form
+            id="add-catalog-item-form"
+            action={handleSubmit}
+            className="space-y-5"
+          >
+            {error && (
+              <div className="rounded-md border border-red-200 bg-red-50 px-4 py-3 text-sm font-semibold text-red-700">
+                {error}
+              </div>
+            )}
+
             <div>
               <label className="mb-2 block text-sm font-semibold text-slate-700">
                 Item Name *
               </label>
 
               <input
+                name="name"
                 type="text"
                 placeholder="Example: Tennis Grip"
                 className="w-full rounded-md border border-slate-300 px-4 py-3 outline-none focus:border-cyan-500"
@@ -65,8 +98,10 @@ export default function AddCatalogItemDialog() {
               </label>
 
               <input
+                name="defaultPrice"
                 type="number"
                 min={0}
+                step="0.01"
                 placeholder="Example: 100"
                 className="w-full rounded-md border border-slate-300 px-4 py-3 outline-none focus:border-cyan-500"
               />
@@ -78,6 +113,7 @@ export default function AddCatalogItemDialog() {
 
             <label className="flex cursor-pointer items-center gap-3 rounded-lg border border-slate-200 p-4">
               <input
+                name="stockTracked"
                 type="checkbox"
                 checked={trackStock}
                 onChange={(event) => setTrackStock(event.target.checked)}
@@ -99,6 +135,7 @@ export default function AddCatalogItemDialog() {
                 </label>
 
                 <input
+                  name="currentStock"
                   type="number"
                   min={0}
                   placeholder="Example: 25"
