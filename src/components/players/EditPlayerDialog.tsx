@@ -2,10 +2,23 @@
 
 import { useState, useTransition } from "react";
 import ModalShell from "@/components/common/ModalShell";
-import { createPlayerAction } from "@/actions/player-actions";
+import { updatePlayerAction } from "@/actions/player-actions";
 import { coachBatchOptions } from "@/lib/coaches";
+import { Pencil } from "lucide-react";
+import { RowActionButton } from "@/components/common/RowActions";
 
-export default function AddPlayerDialog() {
+type EditPlayerDialogProps = {
+ player: {
+  id: number;
+  name: string;
+  email: string | null;
+  phone: string | null;
+  batch: string | null;
+  notes: string | null;
+};
+};
+
+export default function EditPlayerDialog({ player }: EditPlayerDialogProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [error, setError] = useState("");
   const [isPending, startTransition] = useTransition();
@@ -20,13 +33,13 @@ export default function AddPlayerDialog() {
 
     startTransition(async () => {
       try {
-        await createPlayerAction(formData);
+        await updatePlayerAction(player.id, formData);
         closeDialog();
       } catch (error) {
         setError(
           error instanceof Error
             ? error.message
-            : "Something went wrong while saving the player."
+            : "Something went wrong while updating the player."
         );
       }
     });
@@ -34,17 +47,14 @@ export default function AddPlayerDialog() {
 
   return (
     <>
-      <button
-        onClick={() => setIsOpen(true)}
-        className="rounded-md bg-cyan-500 px-5 py-3 font-semibold text-white hover:bg-cyan-600"
-      >
-        + Add Player
-      </button>
+      <RowActionButton label="Edit player" onClick={() => setIsOpen(true)}>
+        <Pencil className="h-5 w-5" />
+      </RowActionButton>
 
       {isOpen && (
         <ModalShell
-          title="Add New Player"
-          description="Create a new player profile for shop billing."
+          title="Edit Player"
+          description="Update this player's contact and profile details."
           onClose={closeDialog}
           footer={
             <>
@@ -58,16 +68,20 @@ export default function AddPlayerDialog() {
 
               <button
                 type="submit"
-                form="add-player-form"
+                form={`edit-player-form-${player.id}`}
                 disabled={isPending}
                 className="rounded-md bg-cyan-500 px-5 py-3 font-semibold text-white hover:bg-cyan-600 disabled:cursor-not-allowed disabled:opacity-60"
               >
-                {isPending ? "Saving..." : "Save Player"}
+                {isPending ? "Saving..." : "Save Changes"}
               </button>
             </>
           }
         >
-          <form id="add-player-form" action={handleSubmit} className="space-y-5">
+          <form
+            id={`edit-player-form-${player.id}`}
+            action={handleSubmit}
+            className="space-y-5"
+          >
             {error && (
               <div className="rounded-md border border-red-200 bg-red-50 px-4 py-3 text-sm font-semibold text-red-700">
                 {error}
@@ -81,7 +95,7 @@ export default function AddPlayerDialog() {
               <input
                 name="name"
                 type="text"
-                placeholder="Enter player name"
+                defaultValue={player.name}
                 className="w-full rounded-md border border-slate-300 px-4 py-3 outline-none focus:border-cyan-500"
               />
             </div>
@@ -93,7 +107,7 @@ export default function AddPlayerDialog() {
               <input
                 name="phone"
                 type="tel"
-                placeholder="Enter phone number"
+                defaultValue={player.phone ?? ""}
                 className="w-full rounded-md border border-slate-300 px-4 py-3 outline-none focus:border-cyan-500"
               />
             </div>
@@ -105,28 +119,29 @@ export default function AddPlayerDialog() {
               <input
                 name="email"
                 type="email"
-                placeholder="Enter email address"
+                defaultValue={player.email ?? ""}
                 className="w-full rounded-md border border-slate-300 px-4 py-3 outline-none focus:border-cyan-500"
               />
             </div>
-              <div>
+            <div>
             <label className="mb-2 block text-sm font-semibold text-slate-700">
-              Batch
+                Batch
             </label>
 
             <select
-              name="batch"
-              className="w-full rounded-md border border-slate-300 bg-white px-4 py-3 outline-none focus:border-cyan-500"
+                name="batch"
+                defaultValue={player.batch ?? ""}
+                className="w-full rounded-md border border-slate-300 bg-white px-4 py-3 outline-none focus:border-cyan-500"
             >
-              <option value="">Select batch / coach</option>
+                <option value="">Select batch / coach</option>
 
-              {coachBatchOptions.map((coach) => (
+                {coachBatchOptions.map((coach) => (
                 <option key={coach} value={coach}>
-                  {coach}
+                    {coach}
                 </option>
-              ))}
+                ))}
             </select>
-          </div>
+            </div>
 
             <div>
               <label className="mb-2 block text-sm font-semibold text-slate-700">
@@ -134,8 +149,8 @@ export default function AddPlayerDialog() {
               </label>
               <textarea
                 name="notes"
-                placeholder="Optional notes about the player"
                 rows={3}
+                defaultValue={player.notes ?? ""}
                 className="w-full resize-none rounded-md border border-slate-300 px-4 py-3 outline-none focus:border-cyan-500"
               />
             </div>

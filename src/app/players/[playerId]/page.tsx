@@ -4,6 +4,7 @@ import AddPurchaseDialog from "@/components/purchases/AddPurchaseDialog";
 import DeletePurchaseButton from "@/components/purchases/DeletePurchaseButton";
 import prisma from "@/lib/prisma";
 import { formatINR } from "@/lib/money";
+import EditPurchaseDialog from "@/components/purchases/EditPurchaseDialog";
 
 type PlayerDetailPageProps = {
   params: Promise<{
@@ -218,9 +219,19 @@ export default async function PlayerDetailPage({
 
                 <td className="px-5 py-4">
                   <div className="flex justify-end gap-4">
-                    <button className="text-slate-500 hover:text-cyan-600">
-                      Edit
-                    </button>
+                    <EditPurchaseDialog
+                      playerId={player.id}
+                      storeItems={storeItems}
+                      purchase={{
+                        id: purchase.id,
+                        storeItemId: purchase.storeItemId,
+                        itemName: purchase.itemName,
+                        unitPrice: purchase.unitPrice,
+                        quantity: purchase.quantity,
+                        purchaseDate: purchase.purchaseDate.toISOString().split("T")[0],
+                        notes: purchase.notes,
+                      }}
+                    />
                     <DeletePurchaseButton purchaseId={purchase.id} playerId={player.id} />
                   </div>
                 </td>

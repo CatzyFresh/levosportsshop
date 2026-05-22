@@ -2,6 +2,8 @@
 
 import { useTransition } from "react";
 import { deletePlayerAction } from "@/actions/player-actions";
+import { Trash2 } from "lucide-react";
+import { RowActionButton } from "@/components/common/RowActions";
 
 type DeletePlayerButtonProps = {
   playerId: number;
@@ -35,13 +37,13 @@ export default function DeletePlayerButton({
   }
 
   return (
-    <button
-      type="button"
+        <RowActionButton
+      label={`Delete ${playerName}`}
+      tone="danger"
       onClick={handleDelete}
       disabled={isPending}
-      className="text-red-500 hover:text-red-700 disabled:cursor-not-allowed disabled:opacity-50"
     >
-      {isPending ? "Deleting..." : "Delete"}
-    </button>
+      <Trash2 className="h-5 w-5" />
+    </RowActionButton>
   );
 }

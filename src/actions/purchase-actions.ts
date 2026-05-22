@@ -233,3 +233,231 @@ export async function deletePurchaseAction({
   revalidatePath(`/billing/${playerId}`);
   revalidatePath("/store-catalog");
 }
+export async function updatePurchaseAction({
+  purchaseId,
+  playerId,
+  formData,
+}: {
+  purchaseId: number;
+  playerId: number;
+  formData: FormData;
+}) {
+  if (!purchaseId || Number.isNaN(purchaseId)) {
+    throw new Error("Invalid purchase.");
+  }
+
+  if (!playerId || Number.isNaN(playerId)) {
+    throw new Error("Invalid player.");
+  }
+
+  const storeItemIdInput = String(formData.get("storeItemId") || "").trim();
+  const itemName = String(formData.get("itemName") || "").trim();
+
+  const unitPriceInput = String(formData.get("unitPrice") || "").trim();
+  const unitPrice = Number(unitPriceInput);
+
+  const quantityInput = String(formData.get("quantity") || "").trim();
+  const quantity = Number(quantityInput);
+
+  const purchaseDateInput = String(formData.get("purchaseDate") || "").trim();
+  const notes = String(formData.get("notes") || "").trim();
+
+  if (!itemName) {
+    throw new Error("Item name is required.");
+  }
+
+  if (unitPriceInput === "" || Number.isNaN(unitPrice) || unitPrice < 0) {
+    throw new Error("Unit price must be 0 or more.");
+  }
+
+  if (!quantity || Number.isNaN(quantity) || quantity < 1) {
+    throw new Error("Quantity must be at least 1.");
+  }
+
+  const storeItemId = storeItemIdInput ? Number(storeItemIdInput) : null;
+
+  if (storeItemId !== null && Number.isNaN(storeItemId)) {
+    throw new Error("Invalid store item.");
+  }
+
+  const unitPriceInPaise = Math.round(unitPrice * 100);
+  const totalAmount = unitPriceInPaise * quantity;
+
+  const purchaseDate = purchaseDateInput
+    ? new Date(`${purchaseDateInput}T00:00:00`)
+    : new Date();
+
+  async function recalculateInvoiceForMonth(
+    tx: Parameters<Parameters<typeof prisma.$transaction>[0]>[0],
+    recalculationPlayerId: number,
+    month: number,
+    year: number
+  ) {
+    const monthStart = new Date(year, month - 1, 1);
+    const monthEnd = new Date(year, month, 1);
+
+    const invoice = await tx.invoice.findUnique({
+      where: {
+        playerId_month_year: {
+          playerId: recalculationPlayerId,
+          month,
+          year,
+        },
+      },
+      include: {
+        payments: true,
+      },
+    });
+
+    if (!invoice) return;
+
+    const purchases = await tx.purchase.findMany({
+      where: {
+        playerId: recalculationPlayerId,
+        purchaseDate: {
+          gte: monthStart,
+          lt: monthEnd,
+        },
+      },
+    });
+
+    const totalAmountForMonth = purchases.reduce(
+      (sum, purchase) => sum + purchase.totalAmount,
+      0
+    );
+
+    const paidAmount = invoice.payments.reduce(
+      (sum, payment) => sum + payment.amount,
+      0
+    );
+
+    if (paidAmount > totalAmountForMonth) {
+      throw new Error(
+        "Cannot update this purchase because recorded payments would become higher than the new bill total. Adjust payments first."
+      );
+    }
+
+    const balance = Math.max(totalAmountForMonth - paidAmount, 0);
+
+    await tx.purchase.updateMany({
+      where: {
+        playerId: recalculationPlayerId,
+        purchaseDate: {
+          gte: monthStart,
+          lt: monthEnd,
+        },
+      },
+      data: {
+        invoiceId: invoice.id,
+      },
+    });
+
+    await tx.invoice.update({
+      where: {
+        id: invoice.id,
+      },
+      data: {
+        totalAmount: totalAmountForMonth,
+        paidAmount,
+        balance,
+        status: getInvoiceStatus(totalAmountForMonth, paidAmount),
+      },
+    });
+  }
+
+  await prisma.$transaction(async (tx) => {
+    const oldPurchase = await tx.purchase.findUnique({
+      where: {
+        id: purchaseId,
+      },
+      include: {
+        storeItem: true,
+      },
+    });
+
+    if (!oldPurchase) {
+      throw new Error("Purchase not found.");
+    }
+
+    if (oldPurchase.playerId !== playerId) {
+      throw new Error("This purchase does not belong to this player.");
+    }
+
+    const oldMonth = oldPurchase.purchaseDate.getMonth() + 1;
+    const oldYear = oldPurchase.purchaseDate.getFullYear();
+
+    const newMonth = purchaseDate.getMonth() + 1;
+    const newYear = purchaseDate.getFullYear();
+
+    if (oldPurchase.storeItemId && oldPurchase.storeItem?.stockTracked) {
+      await tx.storeItem.update({
+        where: {
+          id: oldPurchase.storeItemId,
+        },
+        data: {
+          currentStock:
+            (oldPurchase.storeItem.currentStock ?? 0) + oldPurchase.quantity,
+        },
+      });
+    }
+
+    if (storeItemId !== null) {
+      const selectedStoreItem = await tx.storeItem.findUnique({
+        where: {
+          id: storeItemId,
+        },
+      });
+
+      if (!selectedStoreItem) {
+        throw new Error("Selected store item was not found.");
+      }
+
+      if (selectedStoreItem.stockTracked) {
+        const currentStock = selectedStoreItem.currentStock ?? 0;
+
+        if (currentStock < quantity) {
+          throw new Error(
+            `Not enough stock. Available stock: ${currentStock}.`
+          );
+        }
+
+        await tx.storeItem.update({
+          where: {
+            id: storeItemId,
+          },
+          data: {
+            currentStock: currentStock - quantity,
+          },
+        });
+      }
+    }
+
+    await tx.purchase.update({
+      where: {
+        id: purchaseId,
+      },
+      data: {
+        storeItemId,
+        itemName,
+        unitPrice: unitPriceInPaise,
+        quantity,
+        totalAmount,
+        purchaseDate,
+        notes: notes || null,
+      },
+    });
+
+    await recalculateInvoiceForMonth(tx, playerId, oldMonth, oldYear);
+
+    if (oldMonth !== newMonth || oldYear !== newYear) {
+      await recalculateInvoiceForMonth(tx, playerId, newMonth, newYear);
+    }
+  });
+
+  revalidatePath("/players");
+  revalidatePath(`/players/${playerId}`);
+  revalidatePath("/billing");
+  revalidatePath(`/billing/${playerId}`);
+  revalidatePath("/store-catalog");
+  revalidatePath("/");
+}

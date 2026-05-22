@@ -7,6 +7,7 @@ export async function createPlayerAction(formData: FormData) {
   const name = String(formData.get("name") || "").trim();
   const email = String(formData.get("email") || "").trim();
   const phone = String(formData.get("phone") || "").trim();
+  const batch = String(formData.get("batch") || "").trim();
   const notes = String(formData.get("notes") || "").trim();
 
   if (!name) {
@@ -18,6 +19,7 @@ export async function createPlayerAction(formData: FormData) {
       name,
       email: email || null,
       phone: phone || null,
+      batch: batch || null,
       notes: notes || null,
     },
   });
@@ -57,5 +59,39 @@ export async function deletePlayerAction(playerId: number) {
 
   revalidatePath("/players");
   revalidatePath("/billing");
+  revalidatePath("/");
+}
+export async function updatePlayerAction(playerId: number, formData: FormData) {
+  if (!playerId || Number.isNaN(playerId)) {
+    throw new Error("Invalid player.");
+  }
+
+  const name = String(formData.get("name") || "").trim();
+  const email = String(formData.get("email") || "").trim();
+  const phone = String(formData.get("phone") || "").trim();
+  const batch = String(formData.get("batch") || "").trim();
+  const notes = String(formData.get("notes") || "").trim();
+
+  if (!name) {
+    throw new Error("Player name is required.");
+  }
+
+  await prisma.player.update({
+    where: {
+      id: playerId,
+    },
+    data: {
+      name,
+      email: email || null,
+      phone: phone || null,
+      batch: batch || null,
+      notes: notes || null,
+    },
+  });
+
+  revalidatePath("/players");
+  revalidatePath(`/players/${playerId}`);
+  revalidatePath("/billing");
+  revalidatePath(`/billing/${playerId}`);
   revalidatePath("/");
 }

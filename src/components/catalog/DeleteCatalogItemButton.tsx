@@ -1,39 +1,36 @@
 "use client";
 
 import { useTransition } from "react";
-import { deletePurchaseAction } from "@/actions/purchase-actions";
+import { deleteCatalogItemAction } from "@/actions/catalog-actions";
 import { Trash2 } from "lucide-react";
 import { RowActionButton } from "@/components/common/RowActions";
 
-type DeletePurchaseButtonProps = {
-  purchaseId: number;
-  playerId: number;
+type DeleteCatalogItemButtonProps = {
+  itemId: number;
+  itemName: string;
 };
 
-export default function DeletePurchaseButton({
-  purchaseId,
-  playerId,
-}: DeletePurchaseButtonProps) {
+export default function DeleteCatalogItemButton({
+  itemId,
+  itemName,
+}: DeleteCatalogItemButtonProps) {
   const [isPending, startTransition] = useTransition();
 
   function handleDelete() {
     const confirmed = window.confirm(
-      "Are you sure you want to delete this purchase? This will also update billing and stock."
+      `Are you sure you want to delete ${itemName}? If this item has purchase history, it will be archived instead of permanently deleted.`
     );
 
     if (!confirmed) return;
 
     startTransition(async () => {
       try {
-        await deletePurchaseAction({
-          purchaseId,
-          playerId,
-        });
+        await deleteCatalogItemAction(itemId);
       } catch (error) {
         alert(
           error instanceof Error
             ? error.message
-            : "Something went wrong while deleting the purchase."
+            : "Something went wrong while deleting the store item."
         );
       }
     });
@@ -41,7 +38,7 @@ export default function DeletePurchaseButton({
 
   return (
     <RowActionButton
-      label="Delete purchase"
+      label={`Delete ${itemName}`}
       tone="danger"
       onClick={handleDelete}
       disabled={isPending}

@@ -19,8 +19,9 @@ model Player {
   name      String
   email     String?
   phone     String?
+  batch     String?
   notes     String?
-
+  
   purchases Purchase[]
   invoices  Invoice[]
 

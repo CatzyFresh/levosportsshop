@@ -19,18 +19,22 @@ export default async function PlayersPage() {
       0
     );
 
-    return {
-      id: player.id,
-      name: player.name,
-      contact: player.phone || player.email || "None",
-      spent: formatINR(spent),
-      orders: player.purchases.length,
-      joined: player.createdAt.toLocaleDateString("en-IN", {
-        day: "numeric",
-        month: "short",
-        year: "numeric",
-      }),
-    };
+   return {
+        id: player.id,
+        name: player.name,
+        email: player.email,
+        phone: player.phone,
+        batch: player.batch,
+        notes: player.notes,
+        contact: player.phone || player.email || "None",
+        spent: formatINR(spent),
+        orders: player.purchases.length,
+        joined: player.createdAt.toLocaleDateString("en-IN", {
+          day: "numeric",
+          month: "short",
+          year: "numeric",
+        }),
+      };
   });
 
   return (

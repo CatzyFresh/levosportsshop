@@ -47,3 +47,15 @@ body {
     box-shadow: none !important;
   }
 }
+input,
+select,
+textarea,
+button {
+  font-size: 16px;
+}
+
+@media (max-width: 768px) {
+  h2 {
+    line-height: 1.1;
+  }
+}

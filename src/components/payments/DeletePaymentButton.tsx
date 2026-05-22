@@ -1,47 +1,47 @@
 "use client";
 
 import { useTransition } from "react";
-import { deletePurchaseAction } from "@/actions/purchase-actions";
+import { deletePaymentAction } from "@/actions/billing-actions";
 import { Trash2 } from "lucide-react";
 import { RowActionButton } from "@/components/common/RowActions";
 
-type DeletePurchaseButtonProps = {
-  purchaseId: number;
+type DeletePaymentButtonProps = {
+  paymentId: number;
   playerId: number;
 };
 
-export default function DeletePurchaseButton({
-  purchaseId,
+export default function DeletePaymentButton({
+  paymentId,
   playerId,
-}: DeletePurchaseButtonProps) {
+}: DeletePaymentButtonProps) {
   const [isPending, startTransition] = useTransition();
 
   function handleDelete() {
     const confirmed = window.confirm(
-      "Are you sure you want to delete this purchase? This will also update billing and stock."
+      "Are you sure you want to delete this payment? The bill balance will increase again."
     );
 
     if (!confirmed) return;
 
     startTransition(async () => {
       try {
-        await deletePurchaseAction({
-          purchaseId,
+        await deletePaymentAction({
+          paymentId,
           playerId,
         });
       } catch (error) {
         alert(
           error instanceof Error
             ? error.message
-            : "Something went wrong while deleting the purchase."
+            : "Something went wrong while deleting the payment."
         );
       }
     });
   }
 
   return (
-    <RowActionButton
-      label="Delete purchase"
+        <RowActionButton
+      label="Delete payment"
       tone="danger"
       onClick={handleDelete}
       disabled={isPending}

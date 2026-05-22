@@ -2,7 +2,9 @@
 
 import { useMemo, useState, useTransition } from "react";
 import ModalShell from "@/components/common/ModalShell";
-import { createPurchaseAction } from "@/actions/purchase-actions";
+import { updatePurchaseAction } from "@/actions/purchase-actions";
+import { Pencil } from "lucide-react";
+import { RowActionButton } from "@/components/common/RowActions";
 
 type StoreItemOption = {
   id: number;
@@ -12,25 +14,33 @@ type StoreItemOption = {
   currentStock: number | null;
 };
 
-type AddPurchaseDialogProps = {
+type EditPurchaseDialogProps = {
   playerId: number;
   storeItems: StoreItemOption[];
+  purchase: {
+    id: number;
+    storeItemId: number | null;
+    itemName: string;
+    unitPrice: number;
+    quantity: number;
+    purchaseDate: string;
+    notes: string | null;
+  };
 };
 
-function getTodayDateInputValue() {
-  return new Date().toISOString().split("T")[0];
-}
-
-export default function AddPurchaseDialog({
+export default function EditPurchaseDialog({
   playerId,
   storeItems,
-}: AddPurchaseDialogProps) {
+  purchase,
+}: EditPurchaseDialogProps) {
   const [isOpen, setIsOpen] = useState(false);
-  const [selectedItemId, setSelectedItemId] = useState("");
-  const [customItemName, setCustomItemName] = useState("");
-  const [unitPrice, setUnitPrice] = useState(0);
-  const [quantity, setQuantity] = useState(1);
-  const [purchaseDate, setPurchaseDate] = useState(getTodayDateInputValue());
+  const [selectedItemId, setSelectedItemId] = useState(
+    purchase.storeItemId ? String(purchase.storeItemId) : ""
+  );
+  const [itemName, setItemName] = useState(purchase.itemName);
+  const [unitPrice, setUnitPrice] = useState(purchase.unitPrice / 100);
+  const [quantity, setQuantity] = useState(purchase.quantity);
+  const [purchaseDate, setPurchaseDate] = useState(purchase.purchaseDate);
   const [error, setError] = useState("");
   const [isPending, startTransition] = useTransition();
 
@@ -44,18 +54,18 @@ export default function AddPurchaseDialog({
     const selectedItem = storeItems.find((item) => String(item.id) === itemId);
 
     if (selectedItem) {
-      setCustomItemName(selectedItem.name);
+      setItemName(selectedItem.name);
       setUnitPrice(selectedItem.defaultPrice / 100);
     }
   }
 
   function closeDialog() {
     setIsOpen(false);
-    setSelectedItemId("");
-    setCustomItemName("");
-    setUnitPrice(0);
-    setQuantity(1);
-    setPurchaseDate(getTodayDateInputValue());
+    setSelectedItemId(purchase.storeItemId ? String(purchase.storeItemId) : "");
+    setItemName(purchase.itemName);
+    setUnitPrice(purchase.unitPrice / 100);
+    setQuantity(purchase.quantity);
+    setPurchaseDate(purchase.purchaseDate);
     setError("");
   }
 
@@ -64,13 +74,18 @@ export default function AddPurchaseDialog({
 
     startTransition(async () => {
       try {
-        await createPurchaseAction(playerId, formData);
+        await updatePurchaseAction({
+          purchaseId: purchase.id,
+          playerId,
+          formData,
+        });
+
         closeDialog();
       } catch (error) {
         setError(
           error instanceof Error
             ? error.message
-            : "Something went wrong while saving the purchase."
+            : "Something went wrong while updating the purchase."
         );
       }
     });
@@ -78,17 +93,14 @@ export default function AddPurchaseDialog({
 
   return (
     <>
-      <button
-        onClick={() => setIsOpen(true)}
-        className="rounded-md bg-cyan-500 px-5 py-3 font-semibold text-white hover:bg-cyan-600"
-      >
-        + Add Purchase
-      </button>
+      <RowActionButton label="Edit purchase" onClick={() => setIsOpen(true)}>
+        <Pencil className="h-5 w-5" />
+      </RowActionButton>
 
       {isOpen && (
         <ModalShell
-          title="Add Purchase"
-          description="Add a new purchase to this player's account."
+          title="Edit Purchase"
+          description="Update this purchase entry."
           onClose={closeDialog}
           maxWidth="max-w-xl"
           footer={
@@ -103,16 +115,20 @@ export default function AddPurchaseDialog({
 
               <button
                 type="submit"
-                form="add-purchase-form"
+                form={`edit-purchase-form-${purchase.id}`}
                 disabled={isPending}
                 className="rounded-md bg-cyan-500 px-5 py-3 font-semibold text-white hover:bg-cyan-600 disabled:cursor-not-allowed disabled:opacity-60"
               >
-                {isPending ? "Saving..." : "Save Purchase"}
+                {isPending ? "Saving..." : "Save Changes"}
               </button>
             </>
           }
         >
-          <form id="add-purchase-form" action={handleSubmit} className="space-y-5">
+          <form
+            id={`edit-purchase-form-${purchase.id}`}
+            action={handleSubmit}
+            className="space-y-5"
+          >
             {error && (
               <div className="rounded-md border border-red-200 bg-red-50 px-4 py-3 text-sm font-semibold text-red-700">
                 {error}
@@ -130,7 +146,7 @@ export default function AddPurchaseDialog({
                 onChange={(event) => handleItemChange(event.target.value)}
                 className="w-full rounded-md border border-slate-300 bg-white px-4 py-3 outline-none focus:border-cyan-500"
               >
-                <option value="">Choose item or enter custom item</option>
+                <option value="">Custom item</option>
 
                 {storeItems.map((item) => (
                   <option key={item.id} value={item.id}>
@@ -151,14 +167,13 @@ export default function AddPurchaseDialog({
               <input
                 name="itemName"
                 type="text"
-                value={customItemName}
-                onChange={(event) => setCustomItemName(event.target.value)}
-                placeholder="Enter item name"
+                value={itemName}
+                onChange={(event) => setItemName(event.target.value)}
                 className="w-full rounded-md border border-slate-300 px-4 py-3 outline-none focus:border-cyan-500"
               />
             </div>
 
-            <div className="grid grid-cols-2 gap-5 sm:grid-cols-2">
+            <div className="grid grid-cols-2 gap-5">
               <div>
                 <label className="mb-2 block text-sm font-semibold text-slate-700">
                   Unit Price *
@@ -213,6 +228,7 @@ export default function AddPurchaseDialog({
               <textarea
                 name="notes"
                 rows={3}
+                defaultValue={purchase.notes ?? ""}
                 placeholder="Optional notes"
                 className="w-full resize-none rounded-md border border-slate-300 px-4 py-3 outline-none focus:border-cyan-500"
               />
@@ -220,7 +236,7 @@ export default function AddPurchaseDialog({
 
             <div className="rounded-lg bg-slate-100 p-5">
               <div className="flex items-center justify-between">
-                <p className="font-semibold text-slate-600">Total Amount</p>
+                <p className="font-semibold text-slate-600">Updated Total</p>
                 <p className="text-3xl font-bold text-slate-950">
                   ₹{total.toFixed(2)}
                 </p>

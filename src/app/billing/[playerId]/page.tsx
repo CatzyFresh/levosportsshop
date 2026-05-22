@@ -5,6 +5,8 @@ import { formatINR } from "@/lib/money";
 import RecordPaymentDialog from "@/components/payments/RecordPaymentDialog";
 import BillingMonthSelector from "@/components/billing/BillingMonthSelector";
 import BillActionButtons from "@/components/billing/BillActionButtons";
+import EditPaymentDialog from "@/components/payments/EditPaymentDialog";
+import DeletePaymentButton from "@/components/payments/DeletePaymentButton";
 
 type SinglePlayerBillPageProps = {
   params: Promise<{
@@ -312,18 +314,19 @@ const dueDate = getDueDate();
         <table className="w-full border-collapse">
           <thead>
             <tr className="border-b border-slate-200 bg-slate-50 text-left text-sm text-slate-500">
-              <th className="px-5 py-4 font-semibold">Date</th>
-              <th className="px-5 py-4 font-semibold">Method</th>
-              <th className="px-5 py-4 font-semibold">Notes</th>
-              <th className="px-5 py-4 text-right font-semibold">Amount</th>
-            </tr>
+            <th className="px-5 py-4 font-semibold">Date</th>
+            <th className="px-5 py-4 font-semibold">Method</th>
+            <th className="px-5 py-4 font-semibold">Notes</th>
+            <th className="px-5 py-4 text-right font-semibold">Amount</th>
+            <th className="px-5 py-4 text-right font-semibold">Actions</th>
+          </tr>
           </thead>
 
           <tbody>
             {(!invoice || invoice.payments.length === 0) && (
               <tr>
                 <td
-                  colSpan={4}
+                  colSpan={5}
                   className="px-5 py-12 text-center text-slate-500"
                 >
                   No payments recorded yet.
@@ -353,6 +356,24 @@ const dueDate = getDueDate();
                 <td className="px-5 py-4 text-right font-semibold text-green-600">
                   {formatINR(payment.amount)}
                 </td>
+                <td className="px-5 py-4">
+                  <div className="flex justify-end gap-4">
+                    <EditPaymentDialog
+                      playerId={player.id}
+                      invoiceTotalAmount={totalAmount}
+                      invoicePaidAmount={paidAmount}
+                      payment={{
+                        id: payment.id,
+                        amount: payment.amount,
+                        paidAt: payment.paidAt.toISOString().split("T")[0],
+                        method: payment.method,
+                        notes: payment.notes,
+                      }}
+                    />
+
+                    <DeletePaymentButton paymentId={payment.id} playerId={player.id} />
+                  </div>
+</td>
               </tr>
             ))}
           </tbody>

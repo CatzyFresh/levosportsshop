@@ -1,13 +1,18 @@
 import AddCatalogItemDialog from "@/components/catalog/AddCatalogItemDialog";
+import DeleteCatalogItemButton from "@/components/catalog/DeleteCatalogItemButton";
+import EditCatalogItemDialog from "@/components/catalog/EditCatalogItemDialog";
 import prisma from "@/lib/prisma";
 import { formatINR } from "@/lib/money";
 
 export default async function StoreCatalogPage() {
   const catalogItems = await prisma.storeItem.findMany({
-    orderBy: {
-      name: "asc",
-    },
-  });
+  where: {
+    isActive: true,
+  },
+  orderBy: {
+    name: "asc",
+  },
+});
 
   return (
     <>
@@ -66,13 +71,17 @@ export default async function StoreCatalogPage() {
 
                 <td className="px-5 py-4">
                   <div className="flex justify-end gap-4">
-                    <button className="text-slate-500 hover:text-cyan-600">
-                      Edit
-                    </button>
+                    <EditCatalogItemDialog
+                      item={{
+                        id: item.id,
+                        name: item.name,
+                        defaultPrice: item.defaultPrice,
+                        stockTracked: item.stockTracked,
+                        currentStock: item.currentStock,
+                      }}
+                    />
 
-                    <button className="text-red-500 hover:text-red-700">
-                      Delete
-                    </button>
+                    <DeleteCatalogItemButton itemId={item.id} itemName={item.name} />
                   </div>
                 </td>
               </tr>

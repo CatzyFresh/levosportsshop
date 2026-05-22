@@ -1,8 +1,10 @@
 "use client";
 
-import Link from "next/link";
 import { useMemo, useState } from "react";
 import { formatINR } from "@/lib/money";
+import { coachBatchOptions } from "@/lib/coaches";
+import { ArrowRight } from "lucide-react";
+import { RowActionLink } from "@/components/common/RowActions";
 
 type BillingStatus = "Paid" | "Partial" | "Overdue" | "Unpaid";
 
@@ -10,6 +12,7 @@ type BillingPlayer = {
   id: number;
   name: string;
   contact: string;
+  batch: string | null;
   orders: number;
   paidAmount: number;
   balance: number;
@@ -26,8 +29,11 @@ const filters = ["All Players", "Unpaid", "Partial", "Overdue", "Paid"] as const
 
 export default function BillingList({ players, month, year }: BillingListProps) {
   const [searchText, setSearchText] = useState("");
+  const [selectedBatch, setSelectedBatch] = useState("All Batches");
   const [activeFilter, setActiveFilter] =
     useState<(typeof filters)[number]>("All Players");
+
+  const batchOptions = ["All Batches", ...coachBatchOptions];
 
   const filteredPlayers = useMemo(() => {
     const query = searchText.trim().toLowerCase();
@@ -36,25 +42,61 @@ export default function BillingList({ players, month, year }: BillingListProps) 
       const matchesSearch =
         !query ||
         player.name.toLowerCase().includes(query) ||
-        player.contact.toLowerCase().includes(query);
+        player.contact.toLowerCase().includes(query) ||
+        (player.batch ?? "").toLowerCase().includes(query);
 
-      const matchesFilter =
+      const matchesBatch =
+        selectedBatch === "All Batches" || player.batch === selectedBatch;
+
+      const matchesStatus =
         activeFilter === "All Players" || player.status === activeFilter;
 
-      return matchesSearch && matchesFilter;
+      return matchesSearch && matchesBatch && matchesStatus;
     });
-  }, [players, searchText, activeFilter]);
+  }, [players, searchText, selectedBatch, activeFilter]);
+
+  const filteredBalance = filteredPlayers.reduce(
+    (sum, player) => sum + player.balance,
+    0
+  );
 
   return (
     <>
       <div className="mb-6 max-w-5xl">
-        <input
-          type="text"
-          value={searchText}
-          onChange={(event) => setSearchText(event.target.value)}
-          placeholder="Search for a player..."
-          className="w-full rounded-md border border-slate-300 bg-white px-5 py-4 text-lg outline-none focus:border-cyan-500"
-        />
+        <div className="flex flex-wrap gap-3">
+          <input
+            type="text"
+            value={searchText}
+            onChange={(event) => setSearchText(event.target.value)}
+            placeholder="Search for a player..."
+            className="min-w-72 flex-1 rounded-md border border-slate-300 bg-white px-5 py-4 text-lg outline-none focus:border-cyan-500"
+          />
+
+          <select
+            value={selectedBatch}
+            onChange={(event) => setSelectedBatch(event.target.value)}
+            className="rounded-md border border-slate-300 bg-white px-5 py-4 font-semibold text-slate-700 outline-none focus:border-cyan-500"
+          >
+            {batchOptions.map((batch) => (
+              <option key={batch} value={batch}>
+                {batch}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        <div className="mt-3 flex flex-wrap items-center justify-between gap-3 text-sm text-slate-500">
+          <p>
+            Showing {filteredPlayers.length} of {players.length} players
+          </p>
+
+          <p>
+            Filtered balance:{" "}
+            <span className="font-bold text-slate-900">
+              {formatINR(filteredBalance)}
+            </span>
+          </p>
+        </div>
       </div>
 
       <div className="mb-6 flex flex-wrap items-center gap-3">
@@ -71,10 +113,6 @@ export default function BillingList({ players, month, year }: BillingListProps) 
             {filter}
           </button>
         ))}
-
-        <p className="ml-2 text-sm text-slate-500">
-          Showing {filteredPlayers.length} of {players.length} players
-        </p>
       </div>
 
       <div className="max-w-5xl space-y-4">
@@ -90,9 +128,19 @@ export default function BillingList({ players, month, year }: BillingListProps) 
             className="flex items-center justify-between rounded-xl border border-slate-200 bg-white p-5 shadow-sm hover:border-cyan-300 hover:shadow-md"
           >
             <div>
-              <div className="flex items-center gap-3">
+              <div className="flex flex-wrap items-center gap-3">
                 <h3 className="text-xl font-bold">{player.name}</h3>
                 <StatusBadge status={player.status} />
+
+                {player.batch ? (
+                  <span className="rounded-md bg-cyan-50 px-3 py-1 text-sm font-semibold text-cyan-700">
+                    {player.batch}
+                  </span>
+                ) : (
+                  <span className="rounded-md bg-slate-100 px-3 py-1 text-sm font-semibold text-slate-500">
+                    No Batch
+                  </span>
+                )}
               </div>
 
               <p className="mt-2 text-slate-500">
@@ -116,12 +164,12 @@ export default function BillingList({ players, month, year }: BillingListProps) 
                 </p>
               </div>
 
-              <Link
+              <RowActionLink
                 href={`/billing/${player.id}?month=${month}&year=${year}`}
-                className="text-2xl font-bold text-slate-900 hover:text-cyan-600"
+                label={`Open bill for ${player.name}`}
               >
-                →
-              </Link>
+                <ArrowRight className="h-5 w-5" />
+              </RowActionLink>
             </div>
           </div>
         ))}
