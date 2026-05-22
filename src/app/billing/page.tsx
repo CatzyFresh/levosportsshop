@@ -1,134 +1,186 @@
+import BillingList from "@/components/billing/BillingList";
+import BillingMonthSelector from "@/components/billing/BillingMonthSelector";
+import prisma from "@/lib/prisma";
+import { formatINR } from "@/lib/money";
 
-import Link from "next/link";
-const billingPlayers = [
-  {
-    id: "114",
-    name: "Aadhvik",
-    contact: "No contact",
-    orders: 2,
-    status: "Unpaid",
-    amount: "₹1,100.00",
-  },
-  {
-    id: "115",
-    name: "Aarav",
-    contact: "No contact",
-    orders: 0,
-    status: "Paid",
-    amount: "₹0.00",
-  },
-  {
-    id: "116",
-    name: "Aarish",
-    contact: "No contact",
-    orders: 0,
-    status: "Paid",
-    amount: "₹0.00",
-  },
-  {
-    id: "117",
-    name: "Aathav",
-    contact: "No contact",
-    orders: 0,
-    status: "Paid",
-    amount: "₹0.00",
-  },
-  {
-    id: "118",
-    name: "Abdullah",
-    contact: "No contact",
-    orders: 0,
-    status: "Paid",
-    amount: "₹0.00",
-  },
-];
+type BillingStatus = "Paid" | "Partial" | "Overdue" | "Unpaid";
 
-const filters = ["All Players", "Unpaid", "Partial", "Overdue", "Paid"];
+type BillingPageProps = {
+  searchParams: Promise<{
+    month?: string;
+    year?: string;
+  }>;
+};
 
-export default function BillingPage() {
+function getSelectedBillingPeriod(searchParams: {
+  month?: string;
+  year?: string;
+}) {
+  const today = new Date();
+
+  const selectedMonth = Number(searchParams.month) || today.getMonth() + 1;
+  const selectedYear = Number(searchParams.year) || today.getFullYear();
+
+  const safeMonth =
+    selectedMonth >= 1 && selectedMonth <= 12
+      ? selectedMonth
+      : today.getMonth() + 1;
+
+  const safeYear =
+    selectedYear >= 2020 && selectedYear <= today.getFullYear() + 2
+      ? selectedYear
+      : today.getFullYear();
+
+  return {
+    month: safeMonth,
+    year: safeYear,
+  };
+}
+
+function getStatus({
+  totalAmount,
+  paidAmount,
+  balance,
+  dueDate,
+}: {
+  totalAmount: number;
+  paidAmount: number;
+  balance: number;
+  dueDate: Date;
+}): BillingStatus {
+  const today = new Date();
+
+  if (totalAmount <= 0) {
+    return "Paid";
+  }
+
+  if (balance <= 0) {
+    return "Paid";
+  }
+
+  if (dueDate < today && balance > 0) {
+    return "Overdue";
+  }
+
+  if (paidAmount > 0 && balance > 0) {
+    return "Partial";
+  }
+
+  return "Unpaid";
+}
+
+export default async function BillingPage({ searchParams }: BillingPageProps) {
+  const resolvedSearchParams = await searchParams;
+  const { month, year } = getSelectedBillingPeriod(resolvedSearchParams);
+
+  const monthStart = new Date(year, month - 1, 1);
+  const monthEnd = new Date(year, month, 1);
+  const dueDate = new Date(year, month, 10);
+
+  const players = await prisma.player.findMany({
+    orderBy: {
+      name: "asc",
+    },
+    include: {
+      purchases: {
+        where: {
+          purchaseDate: {
+            gte: monthStart,
+            lt: monthEnd,
+          },
+        },
+      },
+      invoices: {
+        where: {
+          month,
+          year,
+        },
+        include: {
+          payments: true,
+        },
+      },
+    },
+  });
+
+  const billingPlayers = players.map((player) => {
+    const invoice = player.invoices[0];
+
+    const totalAmount = player.purchases.reduce(
+      (sum, purchase) => sum + purchase.totalAmount,
+      0
+    );
+
+    const paidAmount =
+      invoice?.payments.reduce((sum, payment) => sum + payment.amount, 0) ?? 0;
+
+    const balance = Math.max(totalAmount - paidAmount, 0);
+
+    const status = getStatus({
+      totalAmount,
+      paidAmount,
+      balance,
+      dueDate,
+    });
+
+    return {
+      id: player.id,
+      name: player.name,
+      contact: player.phone || player.email || "No contact",
+      orders: player.purchases.length,
+      paidAmount,
+      balance,
+      status,
+    };
+  });
+
+  const totalOutstanding = billingPlayers.reduce(
+    (sum, player) => sum + player.balance,
+    0
+  );
+
+  const overdueInvoices = billingPlayers.filter(
+    (player) => player.status === "Overdue"
+  ).length;
+
+  const pendingInvoices = billingPlayers.filter(
+    (player) => player.balance > 0
+  ).length;
+
+  const selectedMonthName = new Date(year, month - 1, 1).toLocaleDateString(
+    "en-IN",
+    {
+      month: "long",
+      year: "numeric",
+    }
+  );
+
   return (
     <>
-      <div className="mb-8">
-        <h2 className="text-4xl font-bold">Billing Center</h2>
-        <p className="mt-2 text-slate-500">
-          Track invoices and record payments for all players.
-        </p>
+      <div className="mb-8 flex items-start justify-between gap-5">
+        <div>
+          <h2 className="text-4xl font-bold">Billing Center</h2>
+          <p className="mt-2 text-slate-500">
+            Track invoices and record payments for all players.
+          </p>
+          <p className="mt-2 text-sm font-semibold text-cyan-700">
+            Viewing: {selectedMonthName}
+          </p>
+        </div>
+
+        <BillingMonthSelector month={month} year={year} />
       </div>
 
       <div className="mb-8 grid max-w-5xl grid-cols-3 gap-5">
         <BillingSummaryCard
           title="Total Outstanding"
-          value="₹0.00"
-          danger
+          value={formatINR(totalOutstanding)}
+          danger={totalOutstanding > 0}
         />
-        <BillingSummaryCard title="Overdue Invoices" value="0" />
-        <BillingSummaryCard title="Pending Invoices" value="0" />
+        <BillingSummaryCard title="Overdue Invoices" value={overdueInvoices} />
+        <BillingSummaryCard title="Pending Invoices" value={pendingInvoices} />
       </div>
 
-      <div className="mb-6 max-w-5xl">
-        <input
-          type="text"
-          placeholder="Search for a player..."
-          className="w-full rounded-md border border-slate-300 bg-white px-5 py-4 text-lg outline-none focus:border-cyan-500"
-        />
-      </div>
-
-      <div className="mb-6 flex flex-wrap gap-3">
-        {filters.map((filter, index) => (
-          <button
-            key={filter}
-            className={`rounded-full border px-5 py-2 text-sm font-semibold ${
-              index === 0
-                ? "border-cyan-500 bg-cyan-500 text-white"
-                : "border-slate-300 bg-white text-slate-600 hover:bg-slate-50"
-            }`}
-          >
-            {filter}
-          </button>
-        ))}
-      </div>
-
-      <div className="max-w-5xl space-y-4">
-        {billingPlayers.map((player) => (
-          <div
-            key={player.name}
-            className="flex items-center justify-between rounded-xl border border-slate-200 bg-white p-5 shadow-sm hover:border-cyan-300 hover:shadow-md"
-          >
-            <div>
-              <div className="flex items-center gap-3">
-                <h3 className="text-xl font-bold">{player.name}</h3>
-
-                {player.status === "Paid" && (
-                  <span className="rounded-md bg-green-100 px-3 py-1 text-sm font-semibold text-green-700">
-                    ✓ Paid
-                  </span>
-                )}
-              </div>
-
-              <p className="mt-2 text-slate-500">
-                {player.contact} · {player.orders} orders
-              </p>
-            </div>
-
-            <div className="flex items-center gap-8">
-              <div className="text-right">
-                <p className="text-xs font-bold uppercase tracking-widest text-slate-500">
-                  Lifetime
-                </p>
-                <p className="text-lg font-bold text-cyan-600">
-                  {player.amount}
-                </p>
-              </div>
-              <Link
-                    href={`/billing/${player.id}`}
-                    className="text-2xl font-bold text-slate-900 hover:text-cyan-600"
-                    >
-                    →
-                </Link>
-            </div>
-          </div>
-        ))}
-      </div>
+      <BillingList players={billingPlayers} month={month} year={year} />
     </>
   );
 }
@@ -138,8 +190,8 @@ function BillingSummaryCard({
   value,
   danger,
 }: {
-  title: string;
-  value: string;
+  title: string | number;
+  value: string | number;
   danger?: boolean;
 }) {
   return (

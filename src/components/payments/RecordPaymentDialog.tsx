@@ -1,24 +1,74 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useTransition } from "react";
 import ModalShell from "@/components/common/ModalShell";
+import { formatINR } from "@/lib/money";
+import { recordPaymentAction } from "@/actions/billing-actions";
 
-export default function RecordPaymentDialog() {
+type RecordPaymentDialogProps = {
+  playerId: number;
+  playerName: string;
+  currentBalance: number;
+  month: number;
+  year: number;
+};
+
+function getTodayDateInputValue() {
+  return new Date().toISOString().split("T")[0];
+}
+
+export default function RecordPaymentDialog({
+  playerId,
+  playerName,
+  currentBalance,
+  month,
+  year,
+}: RecordPaymentDialogProps) {
   const [isOpen, setIsOpen] = useState(false);
-  const [amount, setAmount] = useState(1100);
+  const [amount, setAmount] = useState(currentBalance / 100);
+  const [paidAt, setPaidAt] = useState(getTodayDateInputValue());
+  const [error, setError] = useState("");
+  const [isPending, startTransition] = useTransition();
 
   function closeDialog() {
     setIsOpen(false);
-    setAmount(1100);
+    setAmount(currentBalance / 100);
+    setPaidAt(getTodayDateInputValue());
+    setError("");
   }
 
-  const balanceAfterPayment = Math.max(1100 - amount, 0);
+  function handleSubmit(formData: FormData) {
+    setError("");
+
+    startTransition(async () => {
+      try {
+        await recordPaymentAction({
+          playerId,
+          month,
+          year,
+          formData,
+        });
+
+        closeDialog();
+      } catch (error) {
+        setError(
+          error instanceof Error
+            ? error.message
+            : "Something went wrong while recording the payment."
+        );
+      }
+    });
+  }
+
+  const paymentAmountInPaise = Math.round(amount * 100);
+  const balanceAfterPayment = Math.max(currentBalance - paymentAmountInPaise, 0);
 
   return (
     <>
       <button
         onClick={() => setIsOpen(true)}
-        className="rounded-md bg-green-600 px-5 py-3 font-semibold text-white hover:bg-green-700"
+        disabled={currentBalance <= 0}
+        className="rounded-md bg-green-600 px-5 py-3 font-semibold text-white hover:bg-green-700 disabled:cursor-not-allowed disabled:opacity-50"
       >
         + Record Payment
       </button>
@@ -26,7 +76,7 @@ export default function RecordPaymentDialog() {
       {isOpen && (
         <ModalShell
           title="Record Payment"
-          description="Add a payment received from Aadhvik."
+          description={`Add a payment received from ${playerName}.`}
           onClose={closeDialog}
           footer={
             <>
@@ -39,22 +89,35 @@ export default function RecordPaymentDialog() {
               </button>
 
               <button
-                type="button"
-                onClick={closeDialog}
-                className="rounded-md bg-green-600 px-5 py-3 font-semibold text-white hover:bg-green-700"
+                type="submit"
+                form="record-payment-form"
+                disabled={isPending}
+                className="rounded-md bg-green-600 px-5 py-3 font-semibold text-white hover:bg-green-700 disabled:cursor-not-allowed disabled:opacity-60"
               >
-                Save Payment
+                {isPending ? "Saving..." : "Save Payment"}
               </button>
             </>
           }
         >
-          <form className="space-y-5">
+          <form
+            id="record-payment-form"
+            action={handleSubmit}
+            className="space-y-5"
+          >
+            {error && (
+              <div className="rounded-md border border-red-200 bg-red-50 px-4 py-3 text-sm font-semibold text-red-700">
+                {error}
+              </div>
+            )}
+
             <div className="rounded-lg bg-slate-100 p-4">
               <div className="flex items-center justify-between">
                 <p className="text-sm font-semibold text-slate-600">
                   Current Balance
                 </p>
-                <p className="text-2xl font-bold text-red-600">₹1,100.00</p>
+                <p className="text-2xl font-bold text-red-600">
+                  {formatINR(currentBalance)}
+                </p>
               </div>
             </div>
 
@@ -64,8 +127,10 @@ export default function RecordPaymentDialog() {
               </label>
 
               <input
+                name="amount"
                 type="number"
                 min={1}
+                step="0.01"
                 value={amount}
                 onChange={(event) => setAmount(Number(event.target.value))}
                 className="w-full rounded-md border border-slate-300 px-4 py-3 outline-none focus:border-cyan-500"
@@ -82,7 +147,10 @@ export default function RecordPaymentDialog() {
               </label>
 
               <input
+                name="paidAt"
                 type="date"
+                value={paidAt}
+                onChange={(event) => setPaidAt(event.target.value)}
                 className="w-full rounded-md border border-slate-300 px-4 py-3 outline-none focus:border-cyan-500"
               />
             </div>
@@ -92,13 +160,16 @@ export default function RecordPaymentDialog() {
                 Payment Method
               </label>
 
-              <select className="w-full rounded-md border border-slate-300 bg-white px-4 py-3 outline-none focus:border-cyan-500">
+              <select
+                name="method"
+                className="w-full rounded-md border border-slate-300 bg-white px-4 py-3 outline-none focus:border-cyan-500"
+              >
                 <option value="">Select payment method</option>
-                <option value="cash">Cash</option>
-                <option value="upi">UPI</option>
-                <option value="bank-transfer">Bank Transfer</option>
-                <option value="card">Card</option>
-                <option value="other">Other</option>
+                <option value="Cash">Cash</option>
+                <option value="UPI">UPI</option>
+                <option value="Bank Transfer">Bank Transfer</option>
+                <option value="Card">Card</option>
+                <option value="Other">Other</option>
               </select>
             </div>
 
@@ -108,6 +179,7 @@ export default function RecordPaymentDialog() {
               </label>
 
               <textarea
+                name="notes"
                 rows={3}
                 placeholder="Optional payment notes"
                 className="w-full resize-none rounded-md border border-slate-300 px-4 py-3 outline-none focus:border-cyan-500"
@@ -120,7 +192,7 @@ export default function RecordPaymentDialog() {
                   Balance After Payment
                 </p>
                 <p className="text-2xl font-bold text-green-700">
-                  ₹{balanceAfterPayment.toFixed(2)}
+                  {formatINR(balanceAfterPayment)}
                 </p>
               </div>
             </div>

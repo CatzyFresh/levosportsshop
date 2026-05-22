@@ -24,3 +24,38 @@ export async function createPlayerAction(formData: FormData) {
 
   revalidatePath("/players");
 }
+export async function deletePlayerAction(playerId: number) {
+  if (!playerId || Number.isNaN(playerId)) {
+    throw new Error("Invalid player.");
+  }
+
+  const player = await prisma.player.findUnique({
+    where: {
+      id: playerId,
+    },
+    include: {
+      purchases: true,
+      invoices: true,
+    },
+  });
+
+  if (!player) {
+    throw new Error("Player not found.");
+  }
+
+  if (player.purchases.length > 0 || player.invoices.length > 0) {
+    throw new Error(
+      "This player has purchase or billing history. Delete their purchases/payments first, or archive the player later."
+    );
+  }
+
+  await prisma.player.delete({
+    where: {
+      id: playerId,
+    },
+  });
+
+  revalidatePath("/players");
+  revalidatePath("/billing");
+  revalidatePath("/");
+}
