@@ -1,3 +1,6 @@
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
+
 import AddPlayerDialog from "@/components/players/AddPlayerDialog";
 import PlayersTable from "@/components/players/PlayersTable";
 import prisma from "@/lib/prisma";
