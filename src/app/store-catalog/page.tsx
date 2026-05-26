@@ -1,25 +1,45 @@
-import AddCatalogItemDialog from "@/components/catalog/AddCatalogItemDialog";
-import DeleteCatalogItemButton from "@/components/catalog/DeleteCatalogItemButton";
-import EditCatalogItemDialog from "@/components/catalog/EditCatalogItemDialog";
 import prisma from "@/lib/prisma";
 import { formatINR } from "@/lib/money";
 
+import AddCatalogItemDialog from "@/components/catalog/AddCatalogItemDialog";
+import EditCatalogItemDialog from "@/components/catalog/EditCatalogItemDialog";
+import DeleteCatalogItemButton from "@/components/catalog/DeleteCatalogItemButton";
+import InlineStockEditor from "@/components/catalog/InlineStockEditor";
+
+import { CircleX, Package, TriangleAlert } from "lucide-react";
+
+import { Card, CardContent } from "@/components/ui/card";
+
 export default async function StoreCatalogPage() {
-  const catalogItems = await prisma.storeItem.findMany({
-  where: {
-    isActive: true,
-  },
-  orderBy: {
-    name: "asc",
-  },
-});
+  const items = await prisma.storeItem.findMany({
+    where: {
+      isActive: true,
+    },
+    orderBy: {
+      name: "asc",
+    },
+  });
+
+  const trackedItems = items.filter((item) => item.stockTracked);
+
+  const outOfStockItems = trackedItems.filter(
+    (item) => (item.currentStock ?? 0) <= 0
+  ).length;
+
+  const lowStockItems = trackedItems.filter((item) => {
+    const stock = item.currentStock ?? 0;
+    return stock > 0 && stock <= 5;
+  }).length;
 
   return (
-    <>
-      <div className="mb-8 flex items-start justify-between">
+    <div className="mx-auto max-w-4xl space-y-6 animate-in fade-in duration-500">
+      <div className="space-y-4">
         <div>
-          <h2 className="text-4xl font-bold">Store Catalog</h2>
-          <p className="mt-2 text-slate-500">
+          <h1 className="text-2xl font-bold tracking-tight md:text-3xl">
+            Store Catalog
+          </h1>
+
+          <p className="mt-1 text-sm text-muted-foreground md:text-base">
             Manage items, prices, and stock levels.
           </p>
         </div>
@@ -27,73 +47,141 @@ export default async function StoreCatalogPage() {
         <AddCatalogItemDialog />
       </div>
 
-      <div className="mx-auto max-w-5xl rounded-xl border border-slate-200 bg-white shadow-sm">
-        <table className="w-full border-collapse">
-          <thead>
-            <tr className="border-b border-slate-200 bg-slate-50 text-left text-sm text-slate-500">
-              <th className="px-5 py-4 font-semibold">Item Name</th>
-              <th className="px-5 py-4 font-semibold">Default Price</th>
-              <th className="px-5 py-4 font-semibold">Stock</th>
-              <th className="px-5 py-4 text-right font-semibold">Actions</th>
-            </tr>
-          </thead>
+      <div className="grid grid-cols-3 gap-3">
+        <SummaryCard
+          title="Items Tracked"
+          value={trackedItems.length}
+        />
 
-          <tbody>
-            {catalogItems.length === 0 && (
-              <tr>
-                <td
-                  colSpan={4}
-                  className="px-5 py-12 text-center text-slate-500"
-                >
-                  No catalog items found. Add your first item.
-                </td>
-              </tr>
-            )}
+        <SummaryCard
+          title="Out of Stock"
+          value={outOfStockItems}
+          danger={outOfStockItems > 0}
+        />
 
-            {catalogItems.map((item) => (
-              <tr
-                key={item.id}
-                className="border-b border-slate-100 hover:bg-slate-50 last:border-b-0"
-              >
-                <td className="px-5 py-4 font-medium">{item.name}</td>
-
-                <td className="px-5 py-4 font-semibold">
-                  {formatINR(item.defaultPrice)}
-                </td>
-
-                <td className="px-5 py-4">
-                  <span className="rounded-md border border-slate-300 px-3 py-1 text-sm text-slate-500">
-                    {item.stockTracked
-                      ? item.currentStock ?? 0
-                      : "∞ Unlimited"}
-                  </span>
-                </td>
-
-                <td className="px-5 py-4">
-                  <div className="flex justify-end gap-4">
-                    <EditCatalogItemDialog
-                      item={{
-                        id: item.id,
-                        name: item.name,
-                        defaultPrice: item.defaultPrice,
-                        stockTracked: item.stockTracked,
-                        currentStock: item.currentStock,
-                      }}
-                    />
-
-                    <DeleteCatalogItemButton itemId={item.id} itemName={item.name} />
-                  </div>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+        <SummaryCard
+          title="Low Stock (≤5)"
+          value={lowStockItems}
+          warning={lowStockItems > 0}
+        />
       </div>
 
-      <p className="mt-8 text-center text-sm text-slate-500">
+      <div className="space-y-3">
+        {items.length === 0 ? (
+          <Card className="border-slate-200 bg-white shadow-sm">
+            <CardContent className="flex h-40 items-center justify-center text-center text-sm text-muted-foreground">
+              No catalog items found. Add your first item.
+            </CardContent>
+          </Card>
+        ) : (
+          items.map((item) => {
+            const isTracked = item.stockTracked;
+            const currentStock = item.currentStock ?? 0;
+            const isOutOfStock = isTracked && currentStock <= 0;
+            const isLowStock =
+              isTracked && currentStock > 0 && currentStock <= 5;
+
+            return (
+              <Card
+                key={item.id}
+                className={`border-slate-200 bg-white shadow-sm transition-all duration-300 hover:-translate-y-0.5 hover:shadow-md ${
+                  isOutOfStock
+                    ? "border-red-200"
+                    : isLowStock
+                      ? "border-orange-200"
+                      : ""
+                }`}
+              >
+                <CardContent className="p-5">
+                  <div className="flex items-start justify-between gap-4">
+                    <div className="min-w-0 flex-1">
+                      <h2 className="truncate text-lg font-bold text-slate-950 md:text-xl">
+                        {item.name}
+                      </h2>
+
+                      <p className="mt-1 text-base font-medium text-slate-500">
+                        {formatINR(item.defaultPrice)}
+                      </p>
+
+                      <div className="mt-3">
+                        <InlineStockEditor
+                          itemId={item.id}
+                          stockTracked={item.stockTracked}
+                          currentStock={item.currentStock}
+                        />
+                      </div>
+                    </div>
+
+                    <div className="flex shrink-0 items-center gap-1">
+                      <EditCatalogItemDialog
+                        item={{
+                          id: item.id,
+                          name: item.name,
+                          defaultPrice: item.defaultPrice,
+                          stockTracked: item.stockTracked,
+                          currentStock: item.currentStock,
+                        }}
+                      />
+
+                      <DeleteCatalogItemButton
+                        itemId={item.id}
+                        itemName={item.name}
+                      />
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            );
+          })
+        )}
+      </div>
+
+      <p className="mx-auto max-w-2xl text-center text-sm leading-relaxed text-muted-foreground">
         Tip: Click a stock badge to quickly update the quantity. Leave stock
         untracked for unlimited items.
       </p>
-    </>
+    </div>
+  );
+}
+
+function SummaryCard({
+  title,
+  value,
+  danger,
+  warning,
+}: {
+  title: string;
+  value: string | number;
+  danger?: boolean;
+  warning?: boolean;
+}) {
+  return (
+    <Card
+      className={`border-slate-200 bg-white shadow-sm transition-all duration-300 hover:-translate-y-0.5 hover:shadow-md ${
+        danger
+          ? "border-red-200 bg-red-50/40"
+          : warning
+            ? "border-orange-200 bg-orange-50/40"
+            : ""
+      }`}
+    >
+      <CardContent className="flex min-h-24 flex-col items-center justify-center p-4 text-center">
+        <div
+          className={`text-2xl font-bold md:text-3xl ${
+            danger
+              ? "text-red-600"
+              : warning
+                ? "text-orange-600"
+                : "text-slate-950"
+          }`}
+        >
+          {value}
+        </div>
+
+        <div className="mt-1 flex items-center justify-center gap-1.5 text-xs font-medium text-muted-foreground md:text-sm">
+          <span>{title}</span>
+        </div>
+      </CardContent>
+    </Card>
   );
 }

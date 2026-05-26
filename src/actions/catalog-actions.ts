@@ -16,7 +16,11 @@ export async function createCatalogItemAction(formData: FormData) {
     throw new Error("Item name is required.");
   }
 
-  if (defaultPriceInput === "" || Number.isNaN(defaultPrice) || defaultPrice < 0) {
+  if (
+    defaultPriceInput === "" ||
+    Number.isNaN(defaultPrice) ||
+    defaultPrice < 0
+  ) {
     throw new Error("Default price must be 0 or more.");
   }
 
@@ -32,6 +36,8 @@ export async function createCatalogItemAction(formData: FormData) {
     if (currentStock < 0) {
       throw new Error("Current stock cannot be negative.");
     }
+
+    currentStock = Math.floor(currentStock);
   }
 
   await prisma.storeItem.create({
@@ -45,47 +51,9 @@ export async function createCatalogItemAction(formData: FormData) {
   });
 
   revalidatePath("/store-catalog");
-}
-export async function deleteCatalogItemAction(itemId: number) {
-  if (!itemId || Number.isNaN(itemId)) {
-    throw new Error("Invalid store item.");
-  }
-
-  const storeItem = await prisma.storeItem.findUnique({
-    where: {
-      id: itemId,
-    },
-    include: {
-      purchases: true,
-    },
-  });
-
-  if (!storeItem) {
-    throw new Error("Store item not found.");
-  }
-
-  if (storeItem.purchases.length > 0) {
-    await prisma.storeItem.update({
-      where: {
-        id: itemId,
-      },
-      data: {
-        isActive: false,
-      },
-    });
-  } else {
-    await prisma.storeItem.delete({
-      where: {
-        id: itemId,
-      },
-    });
-  }
-
-  revalidatePath("/store-catalog");
-  revalidatePath("/players");
-  revalidatePath("/billing");
   revalidatePath("/");
 }
+
 export async function updateCatalogItemAction(
   itemId: number,
   formData: FormData
@@ -126,6 +94,8 @@ export async function updateCatalogItemAction(
     if (currentStock < 0) {
       throw new Error("Current stock cannot be negative.");
     }
+
+    currentStock = Math.floor(currentStock);
   }
 
   await prisma.storeItem.update({
@@ -139,6 +109,77 @@ export async function updateCatalogItemAction(
       currentStock,
     },
   });
+
+  revalidatePath("/store-catalog");
+  revalidatePath("/players");
+  revalidatePath("/billing");
+  revalidatePath("/");
+}
+
+export async function updateCatalogStockAction(
+  itemId: number,
+  currentStock: number
+) {
+  if (!itemId || Number.isNaN(itemId)) {
+    throw new Error("Invalid store item.");
+  }
+
+  if (!Number.isFinite(currentStock) || currentStock < 0) {
+    throw new Error("Stock must be 0 or more.");
+  }
+
+  const safeStock = Math.floor(currentStock);
+
+  await prisma.storeItem.update({
+    where: {
+      id: itemId,
+    },
+    data: {
+      stockTracked: true,
+      currentStock: safeStock,
+    },
+  });
+
+  revalidatePath("/store-catalog");
+  revalidatePath("/players");
+  revalidatePath("/billing");
+  revalidatePath("/");
+}
+
+export async function deleteCatalogItemAction(itemId: number) {
+  if (!itemId || Number.isNaN(itemId)) {
+    throw new Error("Invalid store item.");
+  }
+
+  const storeItem = await prisma.storeItem.findUnique({
+    where: {
+      id: itemId,
+    },
+    include: {
+      purchases: true,
+    },
+  });
+
+  if (!storeItem) {
+    throw new Error("Store item not found.");
+  }
+
+  if (storeItem.purchases.length > 0) {
+    await prisma.storeItem.update({
+      where: {
+        id: itemId,
+      },
+      data: {
+        isActive: false,
+      },
+    });
+  } else {
+    await prisma.storeItem.delete({
+      where: {
+        id: itemId,
+      },
+    });
+  }
 
   revalidatePath("/store-catalog");
   revalidatePath("/players");

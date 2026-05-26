@@ -2,6 +2,8 @@ import BillingList from "@/components/billing/BillingList";
 import BillingMonthSelector from "@/components/billing/BillingMonthSelector";
 import prisma from "@/lib/prisma";
 import { formatINR } from "@/lib/money";
+import { Card, CardContent } from "@/components/ui/card";
+import { AlertTriangle, Clock, IndianRupee } from "lucide-react";
 
 type BillingStatus = "Paid" | "Partial" | "Overdue" | "Unpaid";
 
@@ -21,19 +23,15 @@ function getSelectedBillingPeriod(searchParams: {
   const selectedMonth = Number(searchParams.month) || today.getMonth() + 1;
   const selectedYear = Number(searchParams.year) || today.getFullYear();
 
-  const safeMonth =
-    selectedMonth >= 1 && selectedMonth <= 12
-      ? selectedMonth
-      : today.getMonth() + 1;
-
-  const safeYear =
-    selectedYear >= 2020 && selectedYear <= today.getFullYear() + 2
-      ? selectedYear
-      : today.getFullYear();
-
   return {
-    month: safeMonth,
-    year: safeYear,
+    month:
+      selectedMonth >= 1 && selectedMonth <= 12
+        ? selectedMonth
+        : today.getMonth() + 1,
+    year:
+      selectedYear >= 2020 && selectedYear <= today.getFullYear() + 2
+        ? selectedYear
+        : today.getFullYear(),
   };
 }
 
@@ -50,21 +48,10 @@ function getStatus({
 }): BillingStatus {
   const today = new Date();
 
-  if (totalAmount <= 0) {
-    return "Paid";
-  }
-
-  if (balance <= 0) {
-    return "Paid";
-  }
-
-  if (dueDate < today && balance > 0) {
-    return "Overdue";
-  }
-
-  if (paidAmount > 0 && balance > 0) {
-    return "Partial";
-  }
+  if (totalAmount <= 0) return "Paid";
+  if (balance <= 0) return "Paid";
+  if (dueDate < today && balance > 0) return "Overdue";
+  if (paidAmount > 0 && balance > 0) return "Partial";
 
   return "Unpaid";
 }
@@ -156,14 +143,16 @@ export default async function BillingPage({ searchParams }: BillingPageProps) {
   );
 
   return (
-    <>
-      <div className="mb-8 flex items-start justify-between gap-5">
+    <div className="mx-auto max-w-4xl space-y-6 animate-in fade-in duration-500">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div>
-          <h2 className="text-4xl font-bold">Billing Center</h2>
-          <p className="mt-2 text-slate-500">
+          <h1 className="text-2xl font-bold tracking-tight md:text-3xl">
+            Billing Center
+          </h1>
+          <p className="mt-1 text-sm text-muted-foreground">
             Track invoices and record payments for all players.
           </p>
-          <p className="mt-2 text-sm font-semibold text-cyan-700">
+          <p className="mt-2 text-sm font-semibold text-primary">
             Viewing: {selectedMonthName}
           </p>
         </div>
@@ -171,43 +160,65 @@ export default async function BillingPage({ searchParams }: BillingPageProps) {
         <BillingMonthSelector month={month} year={year} />
       </div>
 
-      <div className="mb-8 grid max-w-5xl grid-cols-3 gap-5">
-        <BillingSummaryCard
+      <div className="grid grid-cols-2 gap-3 md:grid-cols-3">
+        <SummaryCard
           title="Total Outstanding"
           value={formatINR(totalOutstanding)}
+          icon={<IndianRupee className="h-4 w-4" />}
           danger={totalOutstanding > 0}
         />
-        <BillingSummaryCard title="Overdue Invoices" value={overdueInvoices} />
-        <BillingSummaryCard title="Pending Invoices" value={pendingInvoices} />
+
+        <SummaryCard
+          title="Overdue Invoices"
+          value={overdueInvoices}
+          icon={<AlertTriangle className="h-4 w-4" />}
+          danger={overdueInvoices > 0}
+        />
+
+        <SummaryCard
+          title="Pending Invoices"
+          value={pendingInvoices}
+          icon={<Clock className="h-4 w-4" />}
+        />
       </div>
 
       <BillingList players={billingPlayers} month={month} year={year} />
-    </>
+    </div>
   );
 }
 
-function BillingSummaryCard({
+function SummaryCard({
   title,
   value,
+  icon,
   danger,
 }: {
-  title: string | number;
+  title: string;
   value: string | number;
+  icon: React.ReactNode;
   danger?: boolean;
 }) {
   return (
-    <div className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
-      <p className="text-sm font-bold uppercase tracking-widest text-slate-500">
-        {title}
-      </p>
+    <Card className={danger ? "border-red-200 bg-red-50/50" : ""}>
+      <CardContent className="p-4">
+        <div className="mb-1 flex items-center justify-between gap-2">
+          <div className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
+            {title}
+          </div>
 
-      <p
-        className={`mt-3 text-3xl font-bold ${
-          danger ? "text-red-600" : "text-slate-950"
-        }`}
-      >
-        {value}
-      </p>
-    </div>
+          <div className={danger ? "text-red-600" : "text-muted-foreground"}>
+            {icon}
+          </div>
+        </div>
+
+        <div
+          className={`text-xl font-bold ${
+            danger ? "text-red-600" : "text-foreground"
+          }`}
+        >
+          {value}
+        </div>
+      </CardContent>
+    </Card>
   );
 }

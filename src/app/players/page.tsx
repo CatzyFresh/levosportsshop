@@ -19,30 +19,33 @@ export default async function PlayersPage() {
       0
     );
 
-   return {
-        id: player.id,
-        name: player.name,
-        email: player.email,
-        phone: player.phone,
-        batch: player.batch,
-        notes: player.notes,
-        contact: player.phone || player.email || "None",
-        spent: formatINR(spent),
-        orders: player.purchases.length,
-        joined: player.createdAt.toLocaleDateString("en-IN", {
-          day: "numeric",
-          month: "short",
-          year: "numeric",
-        }),
-      };
+    return {
+      id: player.id,
+      name: player.name,
+      email: player.email,
+      phone: player.phone,
+      batch: player.batch,
+      notes: player.notes,
+      contact: player.phone || player.email || "None",
+      spent,
+      spentFormatted: formatINR(spent),
+      orders: player.purchases.length,
+      joined: player.createdAt.toLocaleDateString("en-IN", {
+        day: "numeric",
+        month: "short",
+        year: "numeric",
+      }),
+    };
   });
 
   return (
-    <>
-      <div className="mb-8 flex items-start justify-between">
+    <div className="space-y-6 animate-in fade-in duration-500">
+      <div className="flex flex-col items-start justify-between gap-4 sm:flex-row sm:items-center">
         <div>
-          <h2 className="text-4xl font-bold">Players</h2>
-          <p className="mt-2 text-slate-500">
+          <h1 className="text-2xl font-bold tracking-tight md:text-3xl">
+            Players
+          </h1>
+          <p className="mt-1 text-sm text-muted-foreground">
             Manage store customers and their details.
           </p>
         </div>
@@ -51,6 +54,6 @@ export default async function PlayersPage() {
       </div>
 
       <PlayersTable players={playerRows} />
-    </>
+    </div>
   );
 }
