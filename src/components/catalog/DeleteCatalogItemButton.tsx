@@ -1,8 +1,10 @@
 "use client";
 
-import { useState, useTransition } from "react";
-import { deleteCatalogItemAction } from "@/actions/catalog-actions";
+import { useState, useTransition, type MouseEvent } from "react";
 import { Trash2 } from "lucide-react";
+import { toast } from "sonner";
+
+import { deleteCatalogItemAction } from "@/actions/catalog-actions";
 import { RowActionButton } from "@/components/common/RowActions";
 import {
   AlertDialog,
@@ -10,23 +12,26 @@ import {
   AlertDialogCancel,
   AlertDialogContent,
   AlertDialogDescription,
-  AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import { toast } from "sonner";
 
 type DeleteCatalogItemButtonProps = {
   itemId: number;
   itemName: string;
 };
 
-export default function DeleteCatalogItemButton({ itemId, itemName }: DeleteCatalogItemButtonProps) {
+export default function DeleteCatalogItemButton({
+  itemId,
+  itemName,
+}: DeleteCatalogItemButtonProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [isPending, startTransition] = useTransition();
 
-  function handleDelete() {
+  function handleDelete(event: MouseEvent<HTMLButtonElement>) {
+    event.preventDefault();
+
     startTransition(async () => {
       try {
         await deleteCatalogItemAction(itemId);
@@ -35,13 +40,21 @@ export default function DeleteCatalogItemButton({ itemId, itemName }: DeleteCata
       } catch (error) {
         const message =
           error instanceof Error ? error.message : "Failed to remove store item";
-        toast.error("Failed to remove store item", { description: message });
+
+        toast.error("Failed to remove store item", {
+          description: message,
+        });
       }
     });
   }
 
   return (
-    <AlertDialog open={isOpen} onOpenChange={setIsOpen}>
+    <AlertDialog
+      open={isOpen}
+      onOpenChange={(open) => {
+        if (!isPending) setIsOpen(open);
+      }}
+    >
       <AlertDialogTrigger asChild>
         <span>
           <RowActionButton label={`Delete ${itemName}`} tone="danger">
@@ -49,19 +62,35 @@ export default function DeleteCatalogItemButton({ itemId, itemName }: DeleteCata
           </RowActionButton>
         </span>
       </AlertDialogTrigger>
-      <AlertDialogContent>
-        <AlertDialogHeader>
-          <AlertDialogTitle>Remove {itemName}?</AlertDialogTitle>
-          <AlertDialogDescription>
-            This action cannot be undone. If this item has purchase history, it will be deactivated instead of permanently deleted.
+
+      <AlertDialogContent className="w-[calc(100vw-2rem)] max-w-xl rounded-none border-0 bg-slate-50 p-8 text-center shadow-2xl sm:p-10">
+        <AlertDialogHeader className="space-y-6 text-center">
+          <AlertDialogTitle className="text-center text-3xl font-bold tracking-tight text-slate-950 sm:text-4xl">
+            Delete Item
+          </AlertDialogTitle>
+
+          <AlertDialogDescription className="mx-auto max-w-lg text-center text-xl leading-relaxed text-slate-500 sm:text-2xl">
+            Delete {itemName}? If this item has purchase history, it will be
+            deactivated instead.
           </AlertDialogDescription>
         </AlertDialogHeader>
-        <AlertDialogFooter>
-          <AlertDialogCancel disabled={isPending} className="rounded-xl">Cancel</AlertDialogCancel>
-          <AlertDialogAction onClick={handleDelete} disabled={isPending} className="rounded-xl font-semibold">
+
+        <div className="mt-10 flex flex-col gap-5">
+          <AlertDialogAction
+            onClick={handleDelete}
+            disabled={isPending}
+            className="h-16 w-full rounded-lg border-2 border-cyan-500 bg-red-500 text-2xl font-semibold text-white shadow-sm transition-all hover:bg-red-600 focus-visible:ring-cyan-500 disabled:cursor-not-allowed disabled:opacity-60"
+          >
             {isPending ? "Deleting..." : "Delete"}
           </AlertDialogAction>
-        </AlertDialogFooter>
+
+          <AlertDialogCancel
+            disabled={isPending}
+            className="m-0 h-16 w-full rounded-lg border border-slate-300 bg-white text-2xl font-semibold text-slate-950 shadow-sm transition-all hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-60"
+          >
+            Cancel
+          </AlertDialogCancel>
+        </div>
       </AlertDialogContent>
     </AlertDialog>
   );

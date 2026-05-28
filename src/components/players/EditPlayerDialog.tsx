@@ -64,7 +64,7 @@ export default function EditPlayerDialog({ player }: EditPlayerDialogProps) {
               <button
                 type="button"
                 onClick={closeDialog}
-                className="rounded-xl"
+                className="h-14 rounded-x0.5 bg-cyan-600 px-8 text-lg font-bold text-white shadow-sm transition-all hover:bg-cyan-700 hover:shadow-md"
               >
                 Cancel
               </button>
@@ -73,7 +73,7 @@ export default function EditPlayerDialog({ player }: EditPlayerDialogProps) {
                 type="submit"
                 form={`edit-player-form-${player.id}`}
                 disabled={isPending}
-                className="rounded-xl bg-cyan-600 px-4 font-semibold text-white shadow-sm transition-all hover:bg-cyan-700 hover:shadow-md disabled:opacity-60"
+                className="h-14 rounded-x0.5 bg-cyan-600 px-8 text-lg font-bold text-white shadow-sm transition-all hover:bg-cyan-700 hover:shadow-md"
               >
                 {isPending ? "Saving..." : "Save changes"}
               </button>
