@@ -5,11 +5,10 @@ import { ArrowRight, Mail, Phone, Search } from "lucide-react";
 
 import DeletePlayerButton from "@/components/players/DeletePlayerButton";
 import EditPlayerDialog from "@/components/players/EditPlayerDialog";
-
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
 import {
   Table,
   TableBody,
@@ -36,43 +35,43 @@ type PlayerRow = {
 type PlayersTableProps = {
   players: PlayerRow[];
   totalCount: number;
-  currentPage: number;
-  pageSize: number;
   search: string;
 };
 
-export default function PlayersTable({ players, totalCount, currentPage, pageSize, search }: PlayersTableProps) {
-  const totalPages = Math.max(Math.ceil(totalCount / pageSize), 1);
-
+export default function PlayersTable({
+  players,
+  totalCount,
+  search,
+}: PlayersTableProps) {
   return (
     <Card className="overflow-hidden border-slate-200/80 bg-white shadow-[0_8px_30px_rgb(15,23,42,0.08)]">
       <CardHeader className="border-b border-slate-100 bg-gradient-to-br from-white to-cyan-50/40 px-4 py-5 md:px-6">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <form className="relative w-full max-w-md" action="/players">
-            <input type="hidden" name="page" value="1" />
             <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
 
             <Input
               type="search"
+              name="q"
               defaultValue={search}
-                            name="q" placeholder="Search players..."
+              placeholder="Search players..."
               className="h-11 rounded-xl border-slate-200 bg-white pl-10 text-base shadow-sm transition-all duration-300 focus-visible:border-cyan-300 focus-visible:ring-cyan-200"
             />
-                      <button type="submit" className="sr-only">Search</button>
+
+            <button type="submit" className="sr-only">
+              Search
+            </button>
           </form>
 
           <p className="text-sm font-medium text-slate-500">
             Showing{" "}
-            <span className="font-bold text-slate-900">
-              {players.length}
-            </span>{" "}
-            of {totalCount} players
+            <span className="font-bold text-slate-900">{players.length}</span>{" "}
+            {players.length === 1 ? "player" : "players"}
           </p>
         </div>
       </CardHeader>
 
       <CardContent className="p-0">
-        {/* Mobile List */}
         <div className="divide-y divide-slate-100 md:hidden">
           {players.length === 0 ? (
             <div className="py-14 text-center text-sm text-muted-foreground">
@@ -166,7 +165,6 @@ export default function PlayersTable({ players, totalCount, currentPage, pageSiz
           )}
         </div>
 
-        {/* Desktop Table */}
         <div className="hidden overflow-x-auto md:block">
           <Table>
             <TableHeader>
@@ -175,7 +173,9 @@ export default function PlayersTable({ players, totalCount, currentPage, pageSiz
                 <TableHead className="font-bold text-slate-600">
                   Contact
                 </TableHead>
-                <TableHead className="font-bold text-slate-600">Batch</TableHead>
+                <TableHead className="font-bold text-slate-600">
+                  Batch
+                </TableHead>
                 <TableHead className="text-right font-bold text-slate-600">
                   Spent
                 </TableHead>
@@ -290,17 +290,10 @@ export default function PlayersTable({ players, totalCount, currentPage, pageSiz
           </Table>
         </div>
 
-
-        <div className="flex items-center justify-between border-t border-slate-100 px-4 py-3 text-sm md:px-6">
-          <span className="text-slate-500">Page {currentPage} of {totalPages}</span>
-          <div className="flex gap-2">
-            <Button asChild variant="outline" size="sm" disabled={currentPage <= 1}>
-              <Link href={`/players?page=${Math.max(currentPage - 1,1)}${search ? `&q=${encodeURIComponent(search)}` : ""}`}>Previous</Link>
-            </Button>
-            <Button asChild variant="outline" size="sm" disabled={currentPage >= totalPages}>
-              <Link href={`/players?page=${Math.min(currentPage + 1,totalPages)}${search ? `&q=${encodeURIComponent(search)}` : ""}`}>Next</Link>
-            </Button>
-          </div>
+        <div className="border-t border-slate-100 px-4 py-3 text-sm text-slate-500 md:px-6">
+          {totalCount === 0
+            ? "No players found"
+            : `${totalCount} ${totalCount === 1 ? "player" : "players"} shown`}
         </div>
       </CardContent>
     </Card>
