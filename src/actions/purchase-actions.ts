@@ -94,8 +94,8 @@ export async function createPurchaseAction(playerId: number, formData: FormData)
   revalidatePath("/players");
   revalidatePath(`/players/${playerId}`);
   revalidatePath("/store-catalog");
-  revalidateTag("store-item-dropdowns");
-  revalidateTag("players-page-one");
+  revalidateTag("store-item-dropdowns", "max");
+  revalidateTag("players-page-one", "max");
 }
 
 function getInvoiceStatus(totalAmount: number, paidAmount: number) {
@@ -234,8 +234,8 @@ export async function deletePurchaseAction({
   revalidatePath("/billing");
   revalidatePath(`/billing/${playerId}`);
   revalidatePath("/store-catalog");
-  revalidateTag("store-item-dropdowns");
-  revalidateTag("players-page-one");
+  revalidateTag("store-item-dropdowns", "max");
+  revalidateTag("players-page-one", "max");
 }
 export async function updatePurchaseAction({
   purchaseId,
@@ -463,7 +463,7 @@ export async function updatePurchaseAction({
   revalidatePath("/billing");
   revalidatePath(`/billing/${playerId}`);
   revalidatePath("/store-catalog");
-  revalidateTag("store-item-dropdowns");
-  revalidateTag("players-page-one");
+  revalidateTag("store-item-dropdowns", "max");
+  revalidateTag("players-page-one", "max");
   revalidatePath("/");
 }

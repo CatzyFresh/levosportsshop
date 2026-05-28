@@ -51,7 +51,7 @@ export async function createCatalogItemAction(formData: FormData) {
   });
 
   revalidatePath("/store-catalog");
-  revalidateTag("store-item-dropdowns");
+  revalidateTag("store-item-dropdowns", "max");
   revalidatePath("/");
 }
 
@@ -112,7 +112,7 @@ export async function updateCatalogItemAction(
   });
 
   revalidatePath("/store-catalog");
-  revalidateTag("store-item-dropdowns");
+  revalidateTag("store-item-dropdowns", "max");
   revalidatePath("/players");
   revalidatePath("/billing");
   revalidatePath("/");
@@ -143,7 +143,7 @@ export async function updateCatalogStockAction(
   });
 
   revalidatePath("/store-catalog");
-  revalidateTag("store-item-dropdowns");
+  revalidateTag("store-item-dropdowns", "max");
   revalidatePath("/players");
   revalidatePath("/billing");
   revalidatePath("/");
@@ -185,7 +185,7 @@ export async function deleteCatalogItemAction(itemId: number) {
   }
 
   revalidatePath("/store-catalog");
-  revalidateTag("store-item-dropdowns");
+  revalidateTag("store-item-dropdowns", "max");
   revalidatePath("/players");
   revalidatePath("/billing");
   revalidatePath("/");

@@ -25,7 +25,7 @@ export async function createPlayerAction(formData: FormData) {
   });
 
   revalidatePath("/players");
-  revalidateTag("players-page-one");
+  revalidateTag("players-page-one", "max");
 }
 export async function deletePlayerAction(playerId: number) {
   if (!playerId || Number.isNaN(playerId)) {
@@ -59,7 +59,7 @@ export async function deletePlayerAction(playerId: number) {
   });
 
   revalidatePath("/players");
-  revalidateTag("players-page-one");
+  revalidateTag("players-page-one", "max");
   revalidatePath("/billing");
   revalidatePath("/");
 }
@@ -92,7 +92,7 @@ export async function updatePlayerAction(playerId: number, formData: FormData) {
   });
 
   revalidatePath("/players");
-  revalidateTag("players-page-one");
+  revalidateTag("players-page-one", "max");
   revalidatePath(`/players/${playerId}`);
   revalidatePath("/billing");
   revalidatePath(`/billing/${playerId}`);
