@@ -56,6 +56,8 @@ export default async function PlayerProfilePage({
       name: true,
       email: true,
       phone: true,
+      batch: true,
+      createdAt: true,
       purchases: {
         orderBy: {
           purchaseDate: "desc",
