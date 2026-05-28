@@ -1,6 +1,7 @@
 "use client";
 
 import { ReactNode, useState } from "react";
+import RoutePrefetcher from "@/components/RoutePrefetcher";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
@@ -125,6 +126,7 @@ export default function AppShell({ children }: AppShellProps) {
       {/* Main Content */}
       <div className="md:ml-72">
         <main className="min-h-screen px-4 py-5 md:px-10 md:py-8">
+          <RoutePrefetcher />
           {children}
         </main>
       </div>

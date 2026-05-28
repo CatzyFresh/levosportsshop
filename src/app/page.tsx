@@ -1,10 +1,10 @@
-export const dynamic = "force-dynamic";
-export const revalidate = 0;
+export const revalidate = 120;
 
 import Link from "next/link";
 import prisma from "@/lib/prisma";
 import { formatINR } from "@/lib/money";
-import DashboardRevenueChart from "@/components/dashboard/DashboardRevenueChart";
+import dynamic from "next/dynamic";
+const DashboardRevenueChart = dynamic(() => import("@/components/dashboard/DashboardRevenueChart"), { ssr: false });
 import {
   Activity,
   AlertTriangle,
@@ -27,7 +27,9 @@ export default async function DashboardPage() {
   const dueDate = new Date(year, month, 10);
 
   const players = await prisma.player.findMany({
-    include: {
+    select: {
+      id: true,
+      name: true,
       purchases: {
         where: {
           purchaseDate: {
@@ -35,20 +37,21 @@ export default async function DashboardPage() {
             lt: monthEnd,
           },
         },
+        select: { totalAmount: true, quantity: true, itemName: true },
       },
       invoices: {
         where: {
           month,
           year,
         },
-        include: {
-          payments: true,
+        select: {
+          payments: { select: { amount: true } },
         },
       },
     },
   });
 
-  const recentPurchases = await prisma.purchase.findMany({
+  await prisma.purchase.findMany({
     where: {
       purchaseDate: {
         gte: monthStart,
