@@ -19,6 +19,9 @@ model Player {
   invoices  Invoice[]
   purchases Purchase[]
 
+  @@index([name])
+  @@index([phone])
+  @@index([createdAt])
   @@map("players")
 }
 
@@ -53,6 +56,9 @@ model Purchase {
   player       Player     @relation(fields: [playerId], references: [id], onDelete: Cascade)
   storeItem    StoreItem? @relation(fields: [storeItemId], references: [id])
 
+  @@index([playerId])
+  @@index([createdAt])
+  @@index([purchaseDate])
   @@map("purchases")
 }
 
@@ -73,6 +79,9 @@ model Invoice {
   purchases   Purchase[]
 
   @@unique([playerId, month, year])
+  @@index([playerId])
+  @@index([status])
+  @@index([createdAt])
   @@map("invoices")
 }
 
