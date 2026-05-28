@@ -3,8 +3,7 @@ export const revalidate = 120;
 import Link from "next/link";
 import prisma from "@/lib/prisma";
 import { formatINR } from "@/lib/money";
-import dynamic from "next/dynamic";
-const DashboardRevenueChart = dynamic(() => import("@/components/dashboard/DashboardRevenueChart"), { ssr: false });
+import DashboardRevenueChart from "@/components/dashboard/DashboardRevenueChartClient";
 import {
   Activity,
   AlertTriangle,
