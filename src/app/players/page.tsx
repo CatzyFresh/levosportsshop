@@ -14,7 +14,8 @@ const PAGE_SIZE = 25;
 
 export default async function PlayersPage({ searchParams }: PlayersPageProps) {
   const params = await searchParams;
-  const page = Math.max(Number(params.page) || 1, 1);
+  const rawPage = Number(params.page);
+  const page = Number.isFinite(rawPage) && rawPage > 0 ? Math.floor(rawPage) : 1;
   const search = params.q?.trim() ?? "";
 
   const where = search
@@ -50,11 +51,14 @@ export default async function PlayersPage({ searchParams }: PlayersPageProps) {
     prisma.player.count({ where }),
   ]);
 
-  const spentByPlayer = await prisma.purchase.groupBy({
-    by: ["playerId"],
-    where: { playerId: { in: players.map((p) => p.id) } },
-    _sum: { totalAmount: true },
-  });
+  const spentByPlayer =
+    players.length === 0
+      ? []
+      : await prisma.purchase.groupBy({
+          by: ["playerId"],
+          where: { playerId: { in: players.map((p) => p.id) } },
+          _sum: { totalAmount: true },
+        });
 
   const spentMap = new Map(spentByPlayer.map((row) => [row.playerId, row._sum.totalAmount ?? 0]));
 
