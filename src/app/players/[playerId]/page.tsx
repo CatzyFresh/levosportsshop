@@ -39,7 +39,7 @@ export default async function PlayerProfilePage({
   const { playerId: playerIdParam } = await params;
   const playerId = Number(playerIdParam);
 
-  if (!playerId || Number.isNaN(playerId)) {
+  if (!Number.isInteger(playerId) || playerId <= 0) {
     notFound();
   }
 
