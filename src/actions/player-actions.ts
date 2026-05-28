@@ -1,6 +1,6 @@
 "use server";
 
-import { revalidatePath } from "next/cache";
+import { revalidatePath, revalidateTag } from "next/cache";
 import prisma from "@/lib/prisma";
 
 export async function createPlayerAction(formData: FormData) {
@@ -25,6 +25,7 @@ export async function createPlayerAction(formData: FormData) {
   });
 
   revalidatePath("/players");
+  revalidateTag("players-page-one");
 }
 export async function deletePlayerAction(playerId: number) {
   if (!playerId || Number.isNaN(playerId)) {
@@ -58,6 +59,7 @@ export async function deletePlayerAction(playerId: number) {
   });
 
   revalidatePath("/players");
+  revalidateTag("players-page-one");
   revalidatePath("/billing");
   revalidatePath("/");
 }
@@ -90,6 +92,7 @@ export async function updatePlayerAction(playerId: number, formData: FormData) {
   });
 
   revalidatePath("/players");
+  revalidateTag("players-page-one");
   revalidatePath(`/players/${playerId}`);
   revalidatePath("/billing");
   revalidatePath(`/billing/${playerId}`);
