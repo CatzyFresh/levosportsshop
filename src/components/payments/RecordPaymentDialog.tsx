@@ -4,6 +4,7 @@ import { useState, useTransition } from "react";
 import ModalShell from "@/components/common/ModalShell";
 import { formatINR } from "@/lib/money";
 import { recordPaymentAction } from "@/actions/billing-actions";
+import { toast } from "sonner";
 
 type RecordPaymentDialogProps = {
   playerId: number;
@@ -49,13 +50,13 @@ export default function RecordPaymentDialog({
           formData,
         });
 
+        toast.success("Payment recorded successfully");
         closeDialog();
       } catch (error) {
-        setError(
-          error instanceof Error
-            ? error.message
-            : "Something went wrong while recording the payment."
-        );
+        const message =
+          error instanceof Error ? error.message : "Failed to record payment";
+        setError(message);
+        toast.error("Failed to record payment", { description: message });
       }
     });
   }
@@ -83,7 +84,7 @@ export default function RecordPaymentDialog({
               <button
                 type="button"
                 onClick={closeDialog}
-                className="rounded-md border border-slate-300 bg-white px-5 py-3 font-semibold text-slate-700 hover:bg-slate-50"
+                className="rounded-xl"
               >
                 Cancel
               </button>
@@ -92,9 +93,9 @@ export default function RecordPaymentDialog({
                 type="submit"
                 form="record-payment-form"
                 disabled={isPending}
-                className="rounded-md bg-green-600 px-5 py-3 font-semibold text-white hover:bg-green-700 disabled:cursor-not-allowed disabled:opacity-60"
+                className="rounded-xl bg-cyan-600 px-4 font-semibold text-white shadow-sm transition-all hover:bg-cyan-700 hover:shadow-md disabled:opacity-60"
               >
-                {isPending ? "Saving..." : "Save Payment"}
+                {isPending ? "Saving..." : "Update"}
               </button>
             </>
           }

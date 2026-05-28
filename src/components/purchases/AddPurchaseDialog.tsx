@@ -3,6 +3,7 @@
 import { useMemo, useState, useTransition } from "react";
 import ModalShell from "@/components/common/ModalShell";
 import { createPurchaseAction } from "@/actions/purchase-actions";
+import { toast } from "sonner";
 
 type StoreItemOption = {
   id: number;
@@ -65,13 +66,15 @@ export default function AddPurchaseDialog({
     startTransition(async () => {
       try {
         await createPurchaseAction(playerId, formData);
+        toast.success("Purchase added successfully");
         closeDialog();
       } catch (error) {
-        setError(
+        const message =
           error instanceof Error
             ? error.message
-            : "Something went wrong while saving the purchase."
-        );
+            : "Failed to add purchase";
+        setError(message);
+        toast.error("Failed to add purchase", { description: message });
       }
     });
   }
@@ -96,7 +99,7 @@ export default function AddPurchaseDialog({
               <button
                 type="button"
                 onClick={closeDialog}
-                className="rounded-md border border-slate-300 bg-white px-5 py-3 font-semibold text-slate-700 hover:bg-slate-50"
+                className="rounded-xl"
               >
                 Cancel
               </button>
@@ -105,9 +108,9 @@ export default function AddPurchaseDialog({
                 type="submit"
                 form="add-purchase-form"
                 disabled={isPending}
-                className="rounded-md bg-cyan-500 px-5 py-3 font-semibold text-white hover:bg-cyan-600 disabled:cursor-not-allowed disabled:opacity-60"
+                className="rounded-xl bg-cyan-600 px-4 font-semibold text-white shadow-sm transition-all hover:bg-cyan-700 hover:shadow-md disabled:opacity-60"
               >
-                {isPending ? "Saving..." : "Save Purchase"}
+                {isPending ? "Adding..." : "Add"}
               </button>
             </>
           }

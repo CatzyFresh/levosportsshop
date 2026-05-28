@@ -4,6 +4,7 @@ import { useState, useTransition } from "react";
 import ModalShell from "@/components/common/ModalShell";
 import { createPlayerAction } from "@/actions/player-actions";
 import { coachBatchOptions } from "@/lib/coaches";
+import { toast } from "sonner";
 
 export default function AddPlayerDialog() {
   const [isOpen, setIsOpen] = useState(false);
@@ -21,13 +22,17 @@ export default function AddPlayerDialog() {
     startTransition(async () => {
       try {
         await createPlayerAction(formData);
+        toast.success("Player added successfully");
         closeDialog();
       } catch (error) {
-        setError(
+        const message =
           error instanceof Error
             ? error.message
-            : "Something went wrong while saving the player."
-        );
+            : "Failed to add player";
+        setError(message);
+        toast.error("Failed to add player", {
+          description: message,
+        });
       }
     });
   }
@@ -51,7 +56,7 @@ export default function AddPlayerDialog() {
               <button
                 type="button"
                 onClick={closeDialog}
-                className="rounded-md border border-slate-300 bg-white px-5 py-3 font-semibold text-slate-700 hover:bg-slate-50"
+                className="rounded-xl"
               >
                 Cancel
               </button>
@@ -60,9 +65,9 @@ export default function AddPlayerDialog() {
                 type="submit"
                 form="add-player-form"
                 disabled={isPending}
-                className="rounded-md bg-cyan-500 px-5 py-3 font-semibold text-white hover:bg-cyan-600 disabled:cursor-not-allowed disabled:opacity-60"
+                className="rounded-xl bg-cyan-600 px-4 font-semibold text-white shadow-sm transition-all hover:bg-cyan-700 hover:shadow-md disabled:opacity-60"
               >
-                {isPending ? "Saving..." : "Save Player"}
+                {isPending ? "Adding..." : "Add"}
               </button>
             </>
           }
