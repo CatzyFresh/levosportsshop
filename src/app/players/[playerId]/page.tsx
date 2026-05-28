@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import prisma from "@/lib/prisma";
+import { getStoreItemDropdownOptions } from "@/lib/cached-queries";
 import { formatINR } from "@/lib/money";
 
 import AddPurchaseDialog from "@/components/purchases/AddPurchaseDialog";
@@ -50,28 +51,39 @@ export default async function PlayerProfilePage({
   const monthEnd = new Date(year, month, 1);
 
   const player = await prisma.player.findUnique({
-    where: {
-      id: playerId,
-    },
-    include: {
+    select: {
+      id: true,
+      name: true,
+      email: true,
+      phone: true,
       purchases: {
         orderBy: {
           purchaseDate: "desc",
         },
+        select: {
+          id: true,
+          itemName: true,
+          totalAmount: true,
+          quantity: true,
+          purchaseDate: true,
+          notes: true,
+          unitPrice: true,
+          storeItemId: true,
+        },
       },
       invoices: {
-        where: {
-          month,
-          year,
-        },
-        include: {
+        where: { month, year },
+        select: {
           payments: {
-            orderBy: {
-              paidAt: "desc",
-            },
+            orderBy: { paidAt: "desc" },
+            select: { id: true, amount: true, paidAt: true, method: true, notes: true },
           },
         },
       },
+    },
+
+    where: {
+      id: playerId,
     },
   });
 
@@ -79,14 +91,7 @@ export default async function PlayerProfilePage({
     notFound();
   }
 
-  const storeItems = await prisma.storeItem.findMany({
-    where: {
-      isActive: true,
-    },
-    orderBy: {
-      name: "asc",
-    },
-  });
+  const storeItems = await getStoreItemDropdownOptions();
 
   const currentMonthPurchases = player.purchases.filter((purchase) => {
     return purchase.purchaseDate >= monthStart && purchase.purchaseDate < monthEnd;
