@@ -6,6 +6,7 @@ import { updatePlayerAction } from "@/actions/player-actions";
 import { coachBatchOptions } from "@/lib/coaches";
 import { Pencil } from "lucide-react";
 import { RowActionButton } from "@/components/common/RowActions";
+import { toast } from "sonner";
 
 type EditPlayerDialogProps = {
  player: {
@@ -34,13 +35,15 @@ export default function EditPlayerDialog({ player }: EditPlayerDialogProps) {
     startTransition(async () => {
       try {
         await updatePlayerAction(player.id, formData);
+        toast.success("Player updated successfully");
         closeDialog();
       } catch (error) {
-        setError(
+        const message =
           error instanceof Error
             ? error.message
-            : "Something went wrong while updating the player."
-        );
+            : "Failed to update player";
+        setError(message);
+        toast.error("Failed to update player", { description: message });
       }
     });
   }
@@ -61,7 +64,7 @@ export default function EditPlayerDialog({ player }: EditPlayerDialogProps) {
               <button
                 type="button"
                 onClick={closeDialog}
-                className="rounded-md border border-slate-300 bg-white px-5 py-3 font-semibold text-slate-700 hover:bg-slate-50"
+                className="rounded-xl"
               >
                 Cancel
               </button>
@@ -70,9 +73,9 @@ export default function EditPlayerDialog({ player }: EditPlayerDialogProps) {
                 type="submit"
                 form={`edit-player-form-${player.id}`}
                 disabled={isPending}
-                className="rounded-md bg-cyan-500 px-5 py-3 font-semibold text-white hover:bg-cyan-600 disabled:cursor-not-allowed disabled:opacity-60"
+                className="rounded-xl bg-cyan-600 px-4 font-semibold text-white shadow-sm transition-all hover:bg-cyan-700 hover:shadow-md disabled:opacity-60"
               >
-                {isPending ? "Saving..." : "Save Changes"}
+                {isPending ? "Saving..." : "Save changes"}
               </button>
             </>
           }
