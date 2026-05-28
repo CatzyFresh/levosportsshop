@@ -50,7 +50,7 @@ export default async function DashboardPage() {
     },
   });
 
-  await prisma.purchase.findMany({
+  const recentPurchases = await prisma.purchase.findMany({
     where: {
       purchaseDate: {
         gte: monthStart,
@@ -189,7 +189,7 @@ export default async function DashboardPage() {
   return (
     <div className="space-y-6 animate-in fade-in duration-500">
       <div>
-        <h1 className="text-2xl font-bold tracking-tight md:text-3xl">
+        <h1 className="text-2xl font-medium tracking-tight md:text-3xl">
           Dashboard
         </h1>
         <p className="mt-1 text-sm text-muted-foreground">
@@ -232,7 +232,7 @@ export default async function DashboardPage() {
       </div>
 
       <div>
-        <h2 className="mb-3 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+        <h2 className="mb-3 text-xs font-medium uppercase tracking-wider text-muted-foreground">
           Payment Tracking
         </h2>
 
@@ -308,7 +308,7 @@ export default async function DashboardPage() {
                     <div className="min-w-0">
                       <Link
                         href={`/players/${player.playerId}`}
-                        className="block truncate text-sm font-semibold hover:text-cyan-600"
+                        className="block truncate text-sm font-medium hover:text-cyan-600"
                       >
                         {player.playerName}
                       </Link>
@@ -317,7 +317,7 @@ export default async function DashboardPage() {
                       </div>
                     </div>
 
-                    <div className="shrink-0 rounded-lg bg-cyan-100 px-2 py-1 text-xs font-bold text-cyan-700">
+                    <div className="shrink-0 rounded-lg bg-cyan-100 px-2 py-1 text-xs font-semibold text-cyan-700">
                       {formatINR(player.totalAmount)}
                     </div>
                   </div>
@@ -345,7 +345,7 @@ export default async function DashboardPage() {
                     className="flex items-center justify-between gap-2 border-b border-slate-200 p-3 transition-colors last:border-b-0 hover:bg-cyan-50/50"
                   >
                     <div className="min-w-0">
-                      <div className="flex flex-wrap items-center gap-1.5 text-sm font-semibold">
+                      <div className="flex flex-wrap items-center gap-1.5 text-sm font-medium">
                         <span className="truncate">{purchase.itemName}</span>
                         <span className="shrink-0 text-xs font-normal text-muted-foreground">
                           ×{purchase.quantity}
@@ -362,7 +362,7 @@ export default async function DashboardPage() {
                       </div>
                     </div>
 
-                    <div className="shrink-0 text-sm font-bold">
+                    <div className="shrink-0 text-sm font-semibold">
                       {formatINR(purchase.totalAmount)}
                     </div>
                   </div>
@@ -390,12 +390,12 @@ export default async function DashboardPage() {
                     className="flex items-center justify-between gap-3 rounded-xl p-2 transition-colors hover:bg-slate-100"
                   >
                     <div className="flex min-w-0 items-center gap-3">
-                      <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-cyan-100 text-xs font-bold text-cyan-700">
+                      <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-cyan-100 text-xs font-semibold text-cyan-700">
                         {index + 1}
                       </div>
 
                       <div className="min-w-0">
-                        <p className="truncate text-sm font-semibold">
+                        <p className="truncate text-sm font-medium">
                           {item.itemName}
                         </p>
                         <p className="text-xs text-muted-foreground">
@@ -404,7 +404,7 @@ export default async function DashboardPage() {
                       </div>
                     </div>
 
-                    <div className="shrink-0 text-sm font-bold">
+                    <div className="shrink-0 text-sm font-semibold">
                       {formatINR(item.amount)}
                     </div>
                   </div>
@@ -438,14 +438,14 @@ function KpiCard({
       className={`overflow-hidden shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-lg ${className}`}
     >
       <CardHeader className="flex flex-row items-center justify-between px-4 pb-2 pt-4">
-        <CardTitle className="text-xs font-semibold text-slate-600 md:text-sm">
+        <CardTitle className="text-xs font-medium text-slate-600 md:text-sm">
           {title}
         </CardTitle>
         {icon}
       </CardHeader>
 
       <CardContent className="px-4 pb-4">
-        <div className={`text-2xl font-bold md:text-3xl ${valueClassName}`}>
+        <div className={`text-2xl font-semibold md:text-3xl ${valueClassName}`}>
           {value}
         </div>
       </CardContent>

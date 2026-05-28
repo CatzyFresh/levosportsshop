@@ -1,7 +1,7 @@
 @import "tailwindcss";
 
 :root {
-  --background: #f1f5f9;
+  --background: #eef4ff;
   --foreground: #0f172a;
 }
 
@@ -12,8 +12,33 @@
 html,
 body {
   margin: 0;
-  background: var(--background);
+  background:
+    radial-gradient(circle at top right, rgba(99, 102, 241, 0.12), transparent 35%),
+    radial-gradient(circle at top left, rgba(16, 185, 129, 0.12), transparent 40%),
+    var(--background);
   color: var(--foreground);
+  font-family: var(--font-sans), "Inter", "Segoe UI", system-ui, sans-serif;
+}
+
+main {
+  animation: app-fade-slide 320ms ease-out;
+}
+
+@keyframes app-fade-slide {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  main {
+    animation: none;
+  }
 }
 
 @media print {
@@ -30,6 +55,7 @@ body {
   main {
     padding: 0 !important;
     margin: 0 !important;
+    animation: none !important;
   }
 
   table {
@@ -47,6 +73,7 @@ body {
     box-shadow: none !important;
   }
 }
+
 input,
 select,
 textarea,
