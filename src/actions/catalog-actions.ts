@@ -1,6 +1,6 @@
 "use server";
 
-import { revalidatePath } from "next/cache";
+import { revalidatePath, revalidateTag } from "next/cache";
 import prisma from "@/lib/prisma";
 
 export async function createCatalogItemAction(formData: FormData) {
@@ -51,6 +51,7 @@ export async function createCatalogItemAction(formData: FormData) {
   });
 
   revalidatePath("/store-catalog");
+  revalidateTag("store-item-dropdowns", "max");
   revalidatePath("/");
 }
 
@@ -111,6 +112,7 @@ export async function updateCatalogItemAction(
   });
 
   revalidatePath("/store-catalog");
+  revalidateTag("store-item-dropdowns", "max");
   revalidatePath("/players");
   revalidatePath("/billing");
   revalidatePath("/");
@@ -141,6 +143,7 @@ export async function updateCatalogStockAction(
   });
 
   revalidatePath("/store-catalog");
+  revalidateTag("store-item-dropdowns", "max");
   revalidatePath("/players");
   revalidatePath("/billing");
   revalidatePath("/");
@@ -182,6 +185,7 @@ export async function deleteCatalogItemAction(itemId: number) {
   }
 
   revalidatePath("/store-catalog");
+  revalidateTag("store-item-dropdowns", "max");
   revalidatePath("/players");
   revalidatePath("/billing");
   revalidatePath("/");

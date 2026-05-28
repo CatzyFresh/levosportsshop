@@ -1,10 +1,10 @@
-export const dynamic = "force-dynamic";
-export const revalidate = 0;
+export const revalidate = 60;
 
 import AddPlayerDialog from "@/components/players/AddPlayerDialog";
 import PlayersTable from "@/components/players/PlayersTable";
 import prisma from "@/lib/prisma";
 import { formatINR } from "@/lib/money";
+import { getPlayersPageOne } from "@/lib/cached-queries";
 
 type PlayersPageProps = {
   searchParams: Promise<{ q?: string; page?: string }>;
@@ -29,7 +29,9 @@ export default async function PlayersPage({ searchParams }: PlayersPageProps) {
     : {};
 
   const [players, total] = await Promise.all([
-    prisma.player.findMany({
+    page === 1 && !search
+      ? getPlayersPageOne()
+      : prisma.player.findMany({
       where,
       orderBy: { name: "asc" },
       skip: (page - 1) * PAGE_SIZE,
