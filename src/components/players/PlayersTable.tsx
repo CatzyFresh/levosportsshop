@@ -1,5 +1,6 @@
 "use client";
 
+import { useMemo, useState } from "react";
 import Link from "next/link";
 import { ArrowRight, Mail, Phone, Search } from "lucide-react";
 
@@ -43,42 +44,60 @@ export default function PlayersTable({
   totalCount,
   search,
 }: PlayersTableProps) {
+  const [query, setQuery] = useState(search);
+
+  const filteredPlayers = useMemo(() => {
+    const value = query.trim().toLowerCase();
+
+    if (!value) {
+      return players;
+    }
+
+    return players.filter((player) => {
+      return (
+        player.name.toLowerCase().includes(value) ||
+        player.email?.toLowerCase().includes(value) ||
+        player.phone?.toLowerCase().includes(value) ||
+        player.batch?.toLowerCase().includes(value) ||
+        player.notes?.toLowerCase().includes(value)
+      );
+    });
+  }, [players, query]);
+
   return (
     <Card className="overflow-hidden border-slate-200/80 bg-white shadow-[0_8px_30px_rgb(15,23,42,0.08)]">
       <CardHeader className="border-b border-slate-100 bg-gradient-to-br from-white to-cyan-50/40 px-4 py-5 md:px-6">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-          <form className="relative w-full max-w-md" action="/players">
+          <div className="relative w-full max-w-md">
             <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
 
             <Input
               type="search"
-              name="q"
-              defaultValue={search}
+              value={query}
+              onChange={(event) => setQuery(event.target.value)}
               placeholder="Search players..."
               className="h-11 rounded-xl border-slate-200 bg-white pl-10 text-base shadow-sm transition-all duration-300 focus-visible:border-cyan-300 focus-visible:ring-cyan-200"
             />
-
-            <button type="submit" className="sr-only">
-              Search
-            </button>
-          </form>
+          </div>
 
           <p className="text-sm font-medium text-slate-500">
             Showing{" "}
-            <span className="font-bold text-slate-900">{players.length}</span>{" "}
-            {players.length === 1 ? "player" : "players"}
+            <span className="font-bold text-slate-900">
+              {filteredPlayers.length}
+            </span>{" "}
+            of {totalCount} {totalCount === 1 ? "player" : "players"}
           </p>
         </div>
       </CardHeader>
 
       <CardContent className="p-0">
         <div className="divide-y divide-slate-100 md:hidden">
-          {players.length === 0 ? (
+          {filteredPlayers.length === 0 ? (
             <div className="py-14 text-center text-sm text-muted-foreground">
               No players found.
             </div>
           ) : (
-            players.map((player, index) => (
+            filteredPlayers.map((player, index) => (
               <div
                 key={player.id}
                 className="group relative flex items-center gap-3 overflow-hidden p-4 transition-all duration-300 hover:bg-cyan-50/60"
@@ -192,7 +211,7 @@ export default function PlayersTable({
             </TableHeader>
 
             <TableBody>
-              {players.length === 0 ? (
+              {filteredPlayers.length === 0 ? (
                 <TableRow>
                   <TableCell
                     colSpan={7}
@@ -202,7 +221,7 @@ export default function PlayersTable({
                   </TableCell>
                 </TableRow>
               ) : (
-                players.map((player) => (
+                filteredPlayers.map((player) => (
                   <TableRow
                     key={player.id}
                     className="group border-slate-100 transition-all duration-300 hover:bg-cyan-50/60"
@@ -291,9 +310,11 @@ export default function PlayersTable({
         </div>
 
         <div className="border-t border-slate-100 px-4 py-3 text-sm text-slate-500 md:px-6">
-          {totalCount === 0
+          {filteredPlayers.length === 0
             ? "No players found"
-            : `${totalCount} ${totalCount === 1 ? "player" : "players"} shown`}
+            : `${filteredPlayers.length} of ${totalCount} ${
+                totalCount === 1 ? "player" : "players"
+              } shown`}
         </div>
       </CardContent>
     </Card>

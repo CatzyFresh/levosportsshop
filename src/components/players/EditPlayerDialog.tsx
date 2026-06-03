@@ -6,6 +6,7 @@ import { updatePlayerAction } from "@/actions/player-actions";
 import { coachBatchOptions } from "@/lib/coaches";
 import { Pencil } from "lucide-react";
 import { RowActionButton } from "@/components/common/RowActions";
+import {Button} from "@/components/ui/button";
 import { toast } from "sonner";
 
 type EditPlayerDialogProps = {
@@ -61,22 +62,24 @@ export default function EditPlayerDialog({ player }: EditPlayerDialogProps) {
           onClose={closeDialog}
           footer={
             <>
-              <button
+              <Button
+                variant="outline"
                 type="button"
                 onClick={closeDialog}
-                className="h-14 rounded-x0.5 bg-cyan-600 px-8 text-lg font-bold text-white shadow-sm transition-all hover:bg-cyan-700 hover:shadow-md"
+               
               >
                 Cancel
-              </button>
+              </Button>
 
-              <button
+              <Button
+                variant="outline"
                 type="submit"
                 form={`edit-player-form-${player.id}`}
                 disabled={isPending}
-                className="h-14 rounded-x0.5 bg-cyan-600 px-8 text-lg font-bold text-white shadow-sm transition-all hover:bg-cyan-700 hover:shadow-md"
+                
               >
                 {isPending ? "Saving..." : "Save changes"}
-              </button>
+              </Button>
             </>
           }
         >
