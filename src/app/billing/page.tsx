@@ -115,6 +115,7 @@ export default async function BillingPage({ searchParams }: BillingPageProps) {
       contact: player.phone || player.email || "No contact",
       batch: player.batch,
       orders: player.purchases.length,
+      totalAmount,
       paidAmount,
       balance,
       status,
