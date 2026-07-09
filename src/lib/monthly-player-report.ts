@@ -27,6 +27,10 @@ export const monthNames = [
   "December",
 ];
 
+function paiseToRupees(amountInPaise: number) {
+  return amountInPaise / 100;
+}
+
 export function getValidReportPeriod(searchParams: {
   month?: string | null;
   year?: string | null;
@@ -87,24 +91,33 @@ export async function getMonthlyPlayerWiseReport(month: number, year: number) {
   return players
     .map<PlayerWiseReportRow>((player) => {
       const invoice = player.invoices[0];
-      const totalPurchased = player.purchases.reduce(
+      const totalPurchasedInPaise = player.purchases.reduce(
         (sum, purchase) => sum + purchase.totalAmount,
         0
       );
-      const amountPaid =
+      const amountPaidInPaise =
         invoice?.payments.reduce((sum, payment) => sum + payment.amount, 0) ?? 0;
-      const outstandingBalance = Math.max(totalPurchased - amountPaid, 0);
+      const outstandingBalanceInPaise = Math.max(
+        totalPurchasedInPaise - amountPaidInPaise,
+        0
+      );
+
+      const totalPurchased = paiseToRupees(totalPurchasedInPaise);
+      const amountPaid = paiseToRupees(amountPaidInPaise);
+      const outstandingBalance = paiseToRupees(outstandingBalanceInPaise);
+
       const status: PlayerWiseReportStatus =
-        totalPurchased <= 0 || outstandingBalance <= 0
+        totalPurchasedInPaise <= 0 || outstandingBalanceInPaise <= 0
           ? "PAID"
-          : amountPaid > 0
+          : amountPaidInPaise > 0
             ? "PARTIAL"
             : "UNPAID";
 
       const purchasesText = player.purchases
         .map((purchase) => {
           const purchaseDate = purchase.purchaseDate.toISOString().slice(0, 10);
-          return `${purchaseDate} - ${purchase.itemName} (₹${purchase.totalAmount})`;
+          const purchaseAmount = paiseToRupees(purchase.totalAmount);
+          return `${purchaseDate} - ${purchase.itemName} (₹${purchaseAmount})`;
         })
         .join("\n");
 
