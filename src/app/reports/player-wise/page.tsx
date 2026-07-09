@@ -5,7 +5,6 @@ import {
   getValidReportPeriod,
   monthNames,
 } from "@/lib/monthly-player-report";
-import { formatINR } from "@/lib/money";
 import { Card, CardContent } from "@/components/ui/card";
 import { Download, IndianRupee, ReceiptText, Users } from "lucide-react";
 
@@ -15,6 +14,13 @@ type PlayerWiseReportPageProps = {
     year?: string;
   }>;
 };
+
+function formatRupees(amountInRupees: number) {
+  return new Intl.NumberFormat("en-IN", {
+    style: "currency",
+    currency: "INR",
+  }).format(amountInRupees);
+}
 
 export default async function PlayerWiseReportPage({
   searchParams,
@@ -109,17 +115,17 @@ export default async function PlayerWiseReportPage({
         />
         <SummaryCard
           title="Total Purchased"
-          value={formatINR(totalPurchased)}
+          value={formatRupees(totalPurchased)}
           icon={<ReceiptText className="h-4 w-4" />}
         />
         <SummaryCard
           title="Amount Paid"
-          value={formatINR(totalPaid)}
+          value={formatRupees(totalPaid)}
           icon={<IndianRupee className="h-4 w-4" />}
         />
         <SummaryCard
           title="Outstanding"
-          value={formatINR(totalOutstanding)}
+          value={formatRupees(totalOutstanding)}
           icon={<IndianRupee className="h-4 w-4" />}
           danger={totalOutstanding > 0}
         />
