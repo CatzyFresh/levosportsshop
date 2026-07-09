@@ -9,6 +9,7 @@ import {
   Users,
   Store,
   ReceiptText,
+  FileSpreadsheet,
   LogOut,
   Menu,
   X,
@@ -23,6 +24,7 @@ const navItems = [
   { name: "Players", href: "/players", icon: Users },
   { name: "Store Catalog", href: "/store-catalog", icon: Store },
   { name: "Billing", href: "/billing", icon: ReceiptText },
+  { name: "Player Reports", href: "/reports/player-wise", icon: FileSpreadsheet },
 ];
 
 export default function AppShell({ children }: AppShellProps) {
